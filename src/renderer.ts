@@ -193,7 +193,7 @@ function drawCockpitCluster(
   context.textAlign = 'center';
   context.fillStyle = '#71857e';
   context.font = '700 18px Arial';
-  context.fillText('VEILDRIVE', 512, 112);
+  context.fillText('MISTLINE', 512, 112);
   context.fillStyle = '#ff7248';
   context.font = '800 72px Arial';
   context.fillText(gear, 512, 191);
