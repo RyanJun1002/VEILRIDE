@@ -75,6 +75,9 @@ let hitFlash = 0;
 let audio: EngineAudio | null = null;
 let nextNetworkSync = 0;
 let lastVisualFrame = 0;
+let simulationAccumulator = 0;
+const SIMULATION_STEP = 1 / 60;
+const MAX_SIMULATION_STEPS = 6;
 
 function hexColor(value: number) {
   return `#${value.toString(16).padStart(6, '0')}`;
@@ -375,23 +378,37 @@ function updateHud() {
 
 function loop(now: number) {
   requestAnimationFrame(loop);
-  const dt = Math.min(0.033, (now - lastTime) / 1000);
+  const frameDt = Math.min(0.1, (now - lastTime) / 1000);
   lastTime = now;
   const input = getInput();
 
   if (running && !paused) {
-    simulation.update(dt, input);
-    if (simulation.collision) {
+    simulationAccumulator = Math.min(
+      simulationAccumulator + frameDt,
+      SIMULATION_STEP * MAX_SIMULATION_STEPS,
+    );
+    let collisionThisFrame = false;
+    let nearMissThisFrame = false;
+    let simulationSteps = 0;
+    while (simulationAccumulator >= SIMULATION_STEP && simulationSteps < MAX_SIMULATION_STEPS) {
+      simulation.update(SIMULATION_STEP, input);
+      collisionThisFrame ||= simulation.collision;
+      nearMissThisFrame ||= simulation.nearMiss;
+      simulationAccumulator -= SIMULATION_STEP;
+      simulationSteps++;
+    }
+    if (collisionThisFrame) {
       hitFlash = 1;
       flashToast('충돌 — 리듬을 되찾으세요');
     }
-    if (simulation.nearMiss) {
+    if (nearMissThisFrame) {
       nearMiss.classList.remove('show');
       requestAnimationFrame(() => nearMiss.classList.add('show'));
     }
     audio?.update(simulation.player.forwardSpeed, Math.min(1, input.throttle + input.boost * 0.7));
     updateHud();
   } else if (!running) {
+    simulationAccumulator = 0;
     const idleInput: InputState = { throttle: 0, boost: 0, brake: 0, steer: 0, handbrake: false };
     if (now - startedAt > 0) void idleInput;
   }
@@ -410,13 +427,13 @@ function loop(now: number) {
   }
   const visualInterval = view.lowPower ? 1000 / 30 : 0;
   if (!visualInterval || now - lastVisualFrame >= visualInterval) {
-    const visualDt = lastVisualFrame ? Math.min(0.05, (now - lastVisualFrame) / 1000) : dt;
+    const visualDt = lastVisualFrame ? Math.min(0.08, (now - lastVisualFrame) / 1000) : frameDt;
     lastVisualFrame = now;
     view.setRemotePlayers(multiplayer.getRemotePlayers());
     view.update(simulation.player, simulation.traffic, visualDt);
     view.render();
   }
-  hitFlash = Math.max(0, hitFlash - dt * 2.8);
+  hitFlash = Math.max(0, hitFlash - frameDt * 2.8);
   document.documentElement.style.setProperty('--impact', hitFlash.toFixed(3));
 }
 

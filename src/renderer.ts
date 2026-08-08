@@ -11,8 +11,23 @@ const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).device
 const cpuCores = navigator.hardwareConcurrency ?? 8;
 const mobileDevice = matchMedia('(pointer: coarse)').matches || innerWidth <= 820;
 const LOW_POWER_MODE = mobileDevice || deviceMemory <= 4 || cpuCores <= 4;
-const CHUNK_COUNT = LOW_POWER_MODE ? 8 : 13;
-const TRAFFIC_RENDER_LIMIT = LOW_POWER_MODE ? 9 : Number.POSITIVE_INFINITY;
+const CHUNK_COUNT = LOW_POWER_MODE ? 6 : 13;
+const TRAFFIC_RENDER_LIMIT = LOW_POWER_MODE ? 5 : Number.POSITIVE_INFINITY;
+const LOW_RENDER_SCALE = 0.82;
+
+function worldMaterial(parameters: THREE.MeshStandardMaterialParameters) {
+  if (!LOW_POWER_MODE) return new THREE.MeshStandardMaterial(parameters);
+  return new THREE.MeshLambertMaterial({
+    color: parameters.color,
+    emissive: parameters.emissive,
+    emissiveIntensity: parameters.emissiveIntensity,
+    flatShading: parameters.flatShading,
+    transparent: parameters.transparent,
+    opacity: parameters.opacity,
+    side: parameters.side,
+    depthWrite: parameters.depthWrite,
+  });
+}
 
 function mulberry32(seed: number) {
   return () => {
@@ -662,6 +677,53 @@ function finishCustomVehicle(
   return group;
 }
 
+function createLightweightTrafficCar(color: number) {
+  const group = new THREE.Group();
+  const appearance = { ...DEFAULT_CUSTOMIZATION, color };
+  const paint = new THREE.MeshLambertMaterial({ color });
+  const cabinMaterial = new THREE.MeshLambertMaterial({ color: 0x4f696b });
+  const rubber = new THREE.MeshLambertMaterial({ color: 0x090b0a });
+  const white = new THREE.MeshBasicMaterial({ color: 0xf0fff8 });
+  const red = new THREE.MeshBasicMaterial({ color: 0xd7281e });
+
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.58, 3.9), paint);
+  body.position.y = 0.53;
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.58, 1.72), cabinMaterial);
+  cabin.position.set(0, 1.04, 0.08);
+  const headlights = new THREE.Mesh(new THREE.BoxGeometry(1.28, 0.11, 0.05), white);
+  headlights.position.set(0, 0.61, -1.98);
+  const taillights = new THREE.Mesh(new THREE.BoxGeometry(1.34, 0.1, 0.05), red);
+  taillights.position.set(0, 0.61, 1.98);
+  group.add(body, cabin, headlights, taillights);
+
+  const wheelGeometry = new THREE.CylinderGeometry(0.38, 0.38, 0.24, 8);
+  const wheels: THREE.Group[] = [];
+  const frontWheels: THREE.Group[] = [];
+  for (const x of [-0.98, 0.98]) {
+    for (const z of [-1.28, 1.28]) {
+      const steeringPivot = new THREE.Group();
+      steeringPivot.position.set(x, 0.39, z);
+      const spinPivot = new THREE.Group();
+      const wheel = new THREE.Mesh(wheelGeometry, rubber);
+      wheel.rotation.z = Math.PI / 2;
+      spinPivot.add(wheel);
+      steeringPivot.add(spinPivot);
+      group.add(steeringPivot);
+      wheels.push(spinPivot);
+      if (z < 0) frontWheels.push(steeringPivot);
+    }
+  }
+
+  return finishCustomVehicle(group, wheels, frontWheels, appearance, null, 0.38, {
+    height: 1.2,
+    forwardOffset: 0,
+    sideOffset: 0,
+    chaseHeight: 3.4,
+    chaseDistance: 7,
+    lookHeight: 1,
+  });
+}
+
 function createBus(appearance: CarCustomization, player: boolean) {
   const group = new THREE.Group();
   const paint = new THREE.MeshPhysicalMaterial({ color: appearance.color, metalness: 0.28, roughness: 0.34, clearcoat: 0.72 });
@@ -1254,7 +1316,7 @@ export function createCar(color: number, player = false, customization?: CarCust
 }
 
 function makeRoadGeometry(startZ: number) {
-  const segments = LOW_POWER_MODE ? 22 : 38;
+  const segments = LOW_POWER_MODE ? 16 : 38;
   const positions: number[] = [];
   const uvs: number[] = [];
   const indices: number[] = [];
@@ -1284,7 +1346,7 @@ function makeRoadGeometry(startZ: number) {
 function makeMarkingGeometry(startZ: number, offset: number, width = 0.11, dash = false) {
   const positions: number[] = [];
   const indices: number[] = [];
-  const count = LOW_POWER_MODE ? (dash ? 12 : 32) : (dash ? 18 : 55);
+  const count = LOW_POWER_MODE ? (dash ? 8 : 24) : (dash ? 18 : 55);
   for (let i = 0; i < count; i++) {
     if (dash && i % 2) continue;
     const z1 = startZ - (i / count) * CHUNK_LENGTH;
@@ -1439,7 +1501,7 @@ export class GameRenderer {
     this.applyTimeSetting();
 
     this.scene.add(this.playerCar);
-    const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x343b39, roughness: 0.92, metalness: 0.02 });
+    const roadMaterial = worldMaterial({ color: 0x343b39, roughness: 0.92, metalness: 0.02 });
     this.scene.userData.roadMaterial = roadMaterial;
     for (let i = 0; i < CHUNK_COUNT; i++) {
       const group = new THREE.Group();
@@ -1468,7 +1530,7 @@ export class GameRenderer {
   setTraffic(traffic: TrafficState[]) {
     for (const state of traffic.slice(0, TRAFFIC_RENDER_LIMIT)) {
       if (!this.trafficCars.has(state.id)) {
-        const car = createCar(state.color);
+        const car = LOW_POWER_MODE ? createLightweightTrafficCar(state.color) : createCar(state.color);
         car.scale.setScalar(0.92 + (state.id % 3) * 0.05);
         this.scene.add(car);
         this.trafficCars.set(state.id, car);
@@ -1589,8 +1651,8 @@ export class GameRenderer {
     const season = this.seasonSettings[this.seasonIndex];
 
     const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(250, CHUNK_LENGTH + 3, LOW_POWER_MODE ? 4 : 16, LOW_POWER_MODE ? 3 : 10),
-      new THREE.MeshStandardMaterial({ color: season.ground[((index % 2) + 2) % 2], roughness: 1 }),
+      new THREE.PlaneGeometry(250, CHUNK_LENGTH + 3, LOW_POWER_MODE ? 1 : 16, LOW_POWER_MODE ? 1 : 10),
+      worldMaterial({ color: season.ground[((index % 2) + 2) % 2], roughness: 1 }),
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.set(centerX, -0.13, centerZ);
@@ -1605,15 +1667,15 @@ export class GameRenderer {
     chunk.group.add(makeMarkingGeometry(startZ, 3.75, 0.1));
 
     // Roadside reflector posts replace the old flat shoulder blocks.
-    const postCount = LOW_POWER_MODE ? 20 : 36;
+    const postCount = LOW_POWER_MODE ? 14 : 36;
     const posts = new THREE.InstancedMesh(
       new THREE.BoxGeometry(0.13, 0.9, 0.13),
-      new THREE.MeshStandardMaterial({ color: season.shoulder, roughness: 0.72 }),
+      worldMaterial({ color: season.shoulder, roughness: 0.72 }),
       postCount,
     );
     const reflectors = new THREE.InstancedMesh(
       new THREE.BoxGeometry(0.18, 0.16, 0.07),
-      new THREE.MeshStandardMaterial({ color: 0xffd8a0, emissive: 0xff6b24, emissiveIntensity: 1.8, roughness: 0.32 }),
+      worldMaterial({ color: 0xffd8a0, emissive: 0xff6b24, emissiveIntensity: 1.8, roughness: 0.32 }),
       postCount,
     );
     const dummy = new THREE.Object3D();
@@ -1641,7 +1703,7 @@ export class GameRenderer {
 
     const trees: Array<{ x: number; z: number; scale: number; rotation: number; color: number }> = [];
     const rocks: Array<{ x: number; z: number; scale: number; rotation: number }> = [];
-    for (let i = 0; i < (LOW_POWER_MODE ? 24 : 40); i++) {
+    for (let i = 0; i < (LOW_POWER_MODE ? 16 : 40); i++) {
       const z = startZ - rng() * CHUNK_LENGTH;
       const side = rng() < 0.5 ? -1 : 1;
       const dist = 9 + rng() * 72;
@@ -1654,10 +1716,10 @@ export class GameRenderer {
     }
 
     const trunkGeometry = new THREE.CylinderGeometry(0.19, 0.34, 2.8, LOW_POWER_MODE ? 6 : 9);
-    const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x493828, roughness: 0.96 });
+    const trunkMaterial = worldMaterial({ color: 0x493828, roughness: 0.96 });
     const trunks = new THREE.InstancedMesh(trunkGeometry, trunkMaterial, trees.length);
     const crownGeometry = new THREE.ConeGeometry(1, 1, LOW_POWER_MODE ? 7 : 11, LOW_POWER_MODE ? 1 : 2);
-    const crownMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, flatShading: true });
+    const crownMaterial = worldMaterial({ color: 0xffffff, roughness: 0.9, flatShading: true });
     const crownLayers = [
       new THREE.InstancedMesh(crownGeometry, crownMaterial, trees.length),
       new THREE.InstancedMesh(crownGeometry, crownMaterial, trees.length),
@@ -1699,7 +1761,7 @@ export class GameRenderer {
     const rockCount = rocks.length * rockPieces;
     const rockClusters = new THREE.InstancedMesh(
       new THREE.DodecahedronGeometry(1, LOW_POWER_MODE ? 0 : 1),
-      new THREE.MeshStandardMaterial({ color: season.rock, roughness: 0.94, flatShading: true }),
+      worldMaterial({ color: season.rock, roughness: 0.94, flatShading: true }),
       rockCount,
     );
     rocks.forEach((rock, i) => {
@@ -1716,10 +1778,10 @@ export class GameRenderer {
     rockClusters.receiveShadow = true;
     chunk.group.add(rockClusters);
 
-    const shrubCount = LOW_POWER_MODE ? 8 : 18;
+    const shrubCount = LOW_POWER_MODE ? 4 : 18;
     const shrubs = new THREE.InstancedMesh(
       new THREE.IcosahedronGeometry(0.55, LOW_POWER_MODE ? 0 : 1),
-      new THREE.MeshStandardMaterial({ color: season.leaves[1], roughness: 1, flatShading: true }),
+      worldMaterial({ color: season.leaves[1], roughness: 1, flatShading: true }),
       shrubCount,
     );
     for (let i = 0; i < shrubCount; i++) {
@@ -1737,11 +1799,12 @@ export class GameRenderer {
     shrubs.receiveShadow = true;
     chunk.group.add(shrubs);
 
-    for (const side of [-1, 1]) {
+    const mountainSides = LOW_POWER_MODE ? [index % 2 === 0 ? -1 : 1] : [-1, 1];
+    for (const side of mountainSides) {
       for (let peak = 0; peak < (LOW_POWER_MODE ? 1 : 2); peak++) {
         const mountain = new THREE.Mesh(
           makeMountainGeometry(index * 283 + side * 31 + peak * 719),
-          new THREE.MeshStandardMaterial({
+          worldMaterial({
             color: season.hills[side > 0 ? 1 : 0],
             roughness: 1,
             flatShading: true,
@@ -1902,7 +1965,8 @@ export class GameRenderer {
   resize() {
     const width = innerWidth;
     const height = innerHeight;
-    this.renderer.setSize(width, height, false);
+    const renderScale = LOW_POWER_MODE ? LOW_RENDER_SCALE : 1;
+    this.renderer.setSize(Math.round(width * renderScale), Math.round(height * renderScale), false);
     this.composer?.setSize(width, height);
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
