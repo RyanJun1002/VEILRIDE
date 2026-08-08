@@ -59,6 +59,7 @@ let customization = loadCustomization();
 
 const simulation = new DrivingSimulation();
 const view = new GameRenderer(canvas);
+document.documentElement.dataset.quality = view.lowPower ? 'low' : 'high';
 simulation.setCarModel(customization.model);
 view.setPlayerCustomization(customization);
 view.setTraffic(simulation.traffic);
@@ -73,6 +74,7 @@ let lastTime = performance.now();
 let hitFlash = 0;
 let audio: EngineAudio | null = null;
 let nextNetworkSync = 0;
+let lastVisualFrame = 0;
 
 function hexColor(value: number) {
   return `#${value.toString(16).padStart(6, '0')}`;
@@ -255,10 +257,10 @@ function getInput(): InputState {
   const right = keys.has('KeyD') || keys.has('ArrowRight') || touch.has('right');
   return {
     throttle: keys.has('KeyW') || keys.has('ArrowUp') || touch.has('gas') ? 1 : 0,
-    boost: keys.has('ShiftLeft') || keys.has('ShiftRight') ? 1 : 0,
-    brake: keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0,
+    boost: keys.has('ShiftLeft') || keys.has('ShiftRight') || touch.has('boost') ? 1 : 0,
+    brake: keys.has('KeyS') || keys.has('ArrowDown') || touch.has('brake') ? 1 : 0,
     steer: (left ? -1 : 0) + (right ? 1 : 0),
-    handbrake: keys.has('Space'),
+    handbrake: keys.has('Space') || touch.has('handbrake'),
   };
 }
 
@@ -348,11 +350,17 @@ document.querySelectorAll<HTMLButtonElement>('[data-touch]').forEach(button => {
     event.preventDefault();
     button.setPointerCapture(event.pointerId);
     touch.add(action);
+    button.classList.add('is-active');
   };
-  const up = () => touch.delete(action);
+  const up = () => {
+    touch.delete(action);
+    button.classList.remove('is-active');
+  };
   button.addEventListener('pointerdown', down);
   button.addEventListener('pointerup', up);
   button.addEventListener('pointercancel', up);
+  button.addEventListener('lostpointercapture', up);
+  button.addEventListener('contextmenu', event => event.preventDefault());
 });
 
 function updateHud() {
@@ -400,9 +408,14 @@ function loop(now: number) {
     });
     nextNetworkSync = now + 66;
   }
-  view.setRemotePlayers(multiplayer.getRemotePlayers());
-  view.update(simulation.player, simulation.traffic, dt);
-  view.render();
+  const visualInterval = view.lowPower ? 1000 / 30 : 0;
+  if (!visualInterval || now - lastVisualFrame >= visualInterval) {
+    const visualDt = lastVisualFrame ? Math.min(0.05, (now - lastVisualFrame) / 1000) : dt;
+    lastVisualFrame = now;
+    view.setRemotePlayers(multiplayer.getRemotePlayers());
+    view.update(simulation.player, simulation.traffic, visualDt);
+    view.render();
+  }
   hitFlash = Math.max(0, hitFlash - dt * 2.8);
   document.documentElement.style.setProperty('--impact', hitFlash.toFixed(3));
 }

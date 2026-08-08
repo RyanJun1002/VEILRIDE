@@ -1,7 +1,5 @@
 import * as THREE from 'three';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import type { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import type { TrafficState, VehicleState } from './simulation';
 import { roadCenter, roadTangent } from './simulation';
 import { DEFAULT_CUSTOMIZATION, type CarCustomization } from './cars';
@@ -9,7 +7,12 @@ import type { NetworkPlayerState } from './multiplayer';
 
 const ROAD_WIDTH = 8.4;
 const CHUNK_LENGTH = 140;
-const CHUNK_COUNT = 13;
+const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8;
+const cpuCores = navigator.hardwareConcurrency ?? 8;
+const mobileDevice = matchMedia('(pointer: coarse)').matches || innerWidth <= 820;
+const LOW_POWER_MODE = mobileDevice || deviceMemory <= 4 || cpuCores <= 4;
+const CHUNK_COUNT = LOW_POWER_MODE ? 8 : 13;
+const TRAFFIC_RENDER_LIMIT = LOW_POWER_MODE ? 9 : Number.POSITIVE_INFINITY;
 
 function mulberry32(seed: number) {
   return () => {
@@ -33,7 +36,14 @@ function roundedBox(width: number, height: number, depth: number, radius: number
   shape.quadraticCurveTo(x, y + depth, x, y + depth - radius);
   shape.lineTo(x, y + radius);
   shape.quadraticCurveTo(x, y, x + radius, y);
-  const geometry = new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: true, bevelSize: 0.08, bevelThickness: 0.08, bevelSegments: 2 });
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: height,
+    bevelEnabled: true,
+    bevelSize: 0.08,
+    bevelThickness: 0.08,
+    bevelSegments: LOW_POWER_MODE ? 1 : 2,
+    curveSegments: LOW_POWER_MODE ? 5 : 12,
+  });
   geometry.rotateX(Math.PI / 2);
   geometry.translate(0, height / 2, 0);
   geometry.computeVertexNormals();
@@ -1244,7 +1254,7 @@ export function createCar(color: number, player = false, customization?: CarCust
 }
 
 function makeRoadGeometry(startZ: number) {
-  const segments = 38;
+  const segments = LOW_POWER_MODE ? 22 : 38;
   const positions: number[] = [];
   const uvs: number[] = [];
   const indices: number[] = [];
@@ -1274,7 +1284,7 @@ function makeRoadGeometry(startZ: number) {
 function makeMarkingGeometry(startZ: number, offset: number, width = 0.11, dash = false) {
   const positions: number[] = [];
   const indices: number[] = [];
-  const count = dash ? 18 : 55;
+  const count = LOW_POWER_MODE ? (dash ? 12 : 32) : (dash ? 18 : 55);
   for (let i = 0; i < count; i++) {
     if (dash && i % 2) continue;
     const z1 = startZ - (i / count) * CHUNK_LENGTH;
@@ -1313,7 +1323,7 @@ function makeMarkingGeometry(startZ: number, offset: number, width = 0.11, dash 
 
 function makeMountainGeometry(seed: number) {
   const rng = mulberry32(seed);
-  const segments = 12;
+  const segments = LOW_POWER_MODE ? 8 : 12;
   const rings = [
     { y: 0, radius: 1, offsetX: 0, offsetZ: 0 },
     { y: 0.32, radius: 0.74, offsetX: (rng() - 0.5) * 0.12, offsetZ: (rng() - 0.5) * 0.12 },
@@ -1372,7 +1382,8 @@ export class GameRenderer {
   readonly trafficCars = new Map<number, THREE.Group>();
   readonly remoteCars = new Map<string, RemoteCarRender>();
   readonly chunks: WorldChunk[] = [];
-  private composer: EffectComposer;
+  readonly lowPower = LOW_POWER_MODE;
+  private composer: EffectComposer | null = null;
   private cameraMode = 0;
   private cameraSnap = true;
   private cameraPosition = new THREE.Vector3();
@@ -1397,9 +1408,9 @@ export class GameRenderer {
 
   constructor(canvas: HTMLCanvasElement) {
     this.playerCar = createCar(DEFAULT_CUSTOMIZATION.color, true, DEFAULT_CUSTOMIZATION);
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
-    this.renderer.shadowMap.enabled = true;
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !LOW_POWER_MODE, powerPreference: 'high-performance' });
+    this.renderer.setPixelRatio(LOW_POWER_MODE ? 1 : Math.min(devicePixelRatio, 1.5));
+    this.renderer.shadowMap.enabled = !LOW_POWER_MODE;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.08;
@@ -1412,8 +1423,8 @@ export class GameRenderer {
     this.scene.add(this.hemiLight);
     this.keyLight = new THREE.DirectionalLight(0xffd5a0, 4.6);
     this.keyLight.position.set(-50, 82, 32);
-    this.keyLight.castShadow = true;
-    this.keyLight.shadow.mapSize.set(2048, 2048);
+    this.keyLight.castShadow = !LOW_POWER_MODE;
+    this.keyLight.shadow.mapSize.set(1024, 1024);
     this.keyLight.shadow.camera.left = -55;
     this.keyLight.shadow.camera.right = 55;
     this.keyLight.shadow.camera.top = 55;
@@ -1423,7 +1434,7 @@ export class GameRenderer {
     this.scene.add(this.keyLight);
 
     const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffe1ac, fog: false });
-    this.sun = new THREE.Mesh(new THREE.CircleGeometry(11, 40), sunMaterial);
+    this.sun = new THREE.Mesh(new THREE.CircleGeometry(11, LOW_POWER_MODE ? 20 : 40), sunMaterial);
     this.scene.add(this.sun);
     this.applyTimeSetting();
 
@@ -1436,15 +1447,26 @@ export class GameRenderer {
       this.chunks.push({ index: Number.NaN, group });
     }
 
-    this.composer = new EffectComposer(this.renderer);
-    this.composer.addPass(new RenderPass(this.scene, this.camera));
-    this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.22, 0.5, 0.89));
+    if (!LOW_POWER_MODE) void this.initPostProcessing();
     this.resize();
     addEventListener('resize', () => this.resize());
   }
 
+  private async initPostProcessing() {
+    const [{ EffectComposer }, { RenderPass }, { UnrealBloomPass }] = await Promise.all([
+      import('three/examples/jsm/postprocessing/EffectComposer.js'),
+      import('three/examples/jsm/postprocessing/RenderPass.js'),
+      import('three/examples/jsm/postprocessing/UnrealBloomPass.js'),
+    ]);
+    const composer = new EffectComposer(this.renderer);
+    composer.addPass(new RenderPass(this.scene, this.camera));
+    composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.22, 0.5, 0.89));
+    this.composer = composer;
+    this.resize();
+  }
+
   setTraffic(traffic: TrafficState[]) {
-    for (const state of traffic) {
+    for (const state of traffic.slice(0, TRAFFIC_RENDER_LIMIT)) {
       if (!this.trafficCars.has(state.id)) {
         const car = createCar(state.color);
         car.scale.setScalar(0.92 + (state.id % 3) * 0.05);
@@ -1567,7 +1589,7 @@ export class GameRenderer {
     const season = this.seasonSettings[this.seasonIndex];
 
     const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(250, CHUNK_LENGTH + 3, 16, 10),
+      new THREE.PlaneGeometry(250, CHUNK_LENGTH + 3, LOW_POWER_MODE ? 4 : 16, LOW_POWER_MODE ? 3 : 10),
       new THREE.MeshStandardMaterial({ color: season.ground[((index % 2) + 2) % 2], roughness: 1 }),
     );
     ground.rotation.x = -Math.PI / 2;
@@ -1583,7 +1605,7 @@ export class GameRenderer {
     chunk.group.add(makeMarkingGeometry(startZ, 3.75, 0.1));
 
     // Roadside reflector posts replace the old flat shoulder blocks.
-    const postCount = 36;
+    const postCount = LOW_POWER_MODE ? 20 : 36;
     const posts = new THREE.InstancedMesh(
       new THREE.BoxGeometry(0.13, 0.9, 0.13),
       new THREE.MeshStandardMaterial({ color: season.shoulder, roughness: 0.72 }),
@@ -1619,7 +1641,7 @@ export class GameRenderer {
 
     const trees: Array<{ x: number; z: number; scale: number; rotation: number; color: number }> = [];
     const rocks: Array<{ x: number; z: number; scale: number; rotation: number }> = [];
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < (LOW_POWER_MODE ? 24 : 40); i++) {
       const z = startZ - rng() * CHUNK_LENGTH;
       const side = rng() < 0.5 ? -1 : 1;
       const dist = 9 + rng() * 72;
@@ -1631,15 +1653,15 @@ export class GameRenderer {
       }
     }
 
-    const trunkGeometry = new THREE.CylinderGeometry(0.19, 0.34, 2.8, 9);
+    const trunkGeometry = new THREE.CylinderGeometry(0.19, 0.34, 2.8, LOW_POWER_MODE ? 6 : 9);
     const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x493828, roughness: 0.96 });
     const trunks = new THREE.InstancedMesh(trunkGeometry, trunkMaterial, trees.length);
-    const crownGeometry = new THREE.ConeGeometry(1, 1, 11, 2);
+    const crownGeometry = new THREE.ConeGeometry(1, 1, LOW_POWER_MODE ? 7 : 11, LOW_POWER_MODE ? 1 : 2);
     const crownMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, flatShading: true });
     const crownLayers = [
       new THREE.InstancedMesh(crownGeometry, crownMaterial, trees.length),
       new THREE.InstancedMesh(crownGeometry, crownMaterial, trees.length),
-      new THREE.InstancedMesh(crownGeometry, crownMaterial, trees.length),
+      ...(!LOW_POWER_MODE ? [new THREE.InstancedMesh(crownGeometry, crownMaterial, trees.length)] : []),
     ];
     const layerShape = [
       { y: 2.55, radius: 1.48, height: 2.25 },
@@ -1673,29 +1695,30 @@ export class GameRenderer {
     }
     chunk.group.add(trunks, ...crownLayers);
 
-    const rockCount = rocks.length * 2;
+    const rockPieces = LOW_POWER_MODE ? 1 : 2;
+    const rockCount = rocks.length * rockPieces;
     const rockClusters = new THREE.InstancedMesh(
-      new THREE.DodecahedronGeometry(1, 1),
+      new THREE.DodecahedronGeometry(1, LOW_POWER_MODE ? 0 : 1),
       new THREE.MeshStandardMaterial({ color: season.rock, roughness: 0.94, flatShading: true }),
       rockCount,
     );
     rocks.forEach((rock, i) => {
-      for (let piece = 0; piece < 2; piece++) {
+      for (let piece = 0; piece < rockPieces; piece++) {
         const scale = rock.scale * (piece ? 0.52 : 1);
         dummy.position.set(rock.x + piece * scale * 0.9, scale * 0.42 - 0.08, rock.z + piece * scale * 0.45);
         dummy.rotation.set(rock.rotation * 0.3, rock.rotation + piece, rock.rotation * 0.18);
         dummy.scale.set(scale, scale * (0.58 + piece * 0.1), scale * 0.82);
         dummy.updateMatrix();
-        rockClusters.setMatrixAt(i * 2 + piece, dummy.matrix);
+        rockClusters.setMatrixAt(i * rockPieces + piece, dummy.matrix);
       }
     });
     rockClusters.castShadow = true;
     rockClusters.receiveShadow = true;
     chunk.group.add(rockClusters);
 
-    const shrubCount = 18;
+    const shrubCount = LOW_POWER_MODE ? 8 : 18;
     const shrubs = new THREE.InstancedMesh(
-      new THREE.IcosahedronGeometry(0.55, 1),
+      new THREE.IcosahedronGeometry(0.55, LOW_POWER_MODE ? 0 : 1),
       new THREE.MeshStandardMaterial({ color: season.leaves[1], roughness: 1, flatShading: true }),
       shrubCount,
     );
@@ -1715,7 +1738,7 @@ export class GameRenderer {
     chunk.group.add(shrubs);
 
     for (const side of [-1, 1]) {
-      for (let peak = 0; peak < 2; peak++) {
+      for (let peak = 0; peak < (LOW_POWER_MODE ? 1 : 2); peak++) {
         const mountain = new THREE.Mesh(
           makeMountainGeometry(index * 283 + side * 31 + peak * 719),
           new THREE.MeshStandardMaterial({
@@ -1872,14 +1895,15 @@ export class GameRenderer {
   }
 
   render() {
-    this.composer.render();
+    if (this.composer) this.composer.render();
+    else this.renderer.render(this.scene, this.camera);
   }
 
   resize() {
     const width = innerWidth;
     const height = innerHeight;
     this.renderer.setSize(width, height, false);
-    this.composer.setSize(width, height);
+    this.composer?.setSize(width, height);
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
   }

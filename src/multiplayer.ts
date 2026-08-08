@@ -1,5 +1,13 @@
-import Peer, { type DataConnection } from 'peerjs';
+import type Peer from 'peerjs';
+import type { DataConnection } from 'peerjs';
 import type { CarCustomization } from './cars';
+
+let peerModulePromise: Promise<typeof import('peerjs')> | null = null;
+
+async function loadPeerConstructor() {
+  peerModulePromise ??= import('peerjs');
+  return (await peerModulePromise).default;
+}
 
 export type NetworkPlayerState = {
   id: string;
@@ -155,9 +163,10 @@ export class MultiplayerSession {
     this.updatePlayerCount();
   }
 
-  private openPeer(id?: string) {
+  private async openPeer(id?: string) {
+    const PeerConstructor = await loadPeerConstructor();
     return new Promise<Peer>((resolve, reject) => {
-      const peer = id ? new Peer(id, PEER_OPTIONS) : new Peer(PEER_OPTIONS);
+      const peer = id ? new PeerConstructor(id, PEER_OPTIONS) : new PeerConstructor(PEER_OPTIONS);
       const timeout = window.setTimeout(() => {
         peer.destroy();
         reject(new Error('네트워크 연결 시간이 초과됐습니다.'));
