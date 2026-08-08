@@ -548,6 +548,7 @@ function createBusCockpit() {
   const wheelMaterial = new THREE.MeshPhysicalMaterial({ color: 0x18201e, roughness: 0.58, clearcoat: 0.28 });
   const accentMaterial = new THREE.MeshStandardMaterial({ color: 0xf05d3b, emissive: 0x7b1f0d, emissiveIntensity: 0.55 });
   const glassMaterial = new THREE.MeshPhysicalMaterial({ color: 0xa5cecd, transparent: true, opacity: 0.045, roughness: 0.025, side: THREE.DoubleSide, depthWrite: false });
+  const sideGlassMaterial = new THREE.MeshPhysicalMaterial({ color: 0x789b98, transparent: true, opacity: 0.1, roughness: 0.04, side: THREE.DoubleSide, depthWrite: false });
 
   // Bus interiors need their own driver-scale layout. The previous cockpit used
   // a deep block below a distant cluster, which filled half of first-person view.
@@ -623,6 +624,24 @@ function createBusCockpit() {
     const pillar = roundedBox(0.065, 1.58, 0.075, 0.022, dashMaterial);
     pillar.position.set(side * 1.65, 1.35, -0.455);
     cockpit.add(pillar);
+
+    // Continue the body rearward from each A-pillar so the cockpit does not
+    // look open-sided in first person. Glass stays transparent while the door,
+    // belt rail and roof rail make the bus cabin silhouette readable.
+    const sideWindow = new THREE.Mesh(new THREE.PlaneGeometry(1.82, 1.22), sideGlassMaterial);
+    sideWindow.position.set(side * 1.64, 1.35, 0.45);
+    sideWindow.rotation.y = side * Math.PI / 2;
+    const sideRoofRail = roundedBox(0.075, 0.07, 1.9, 0.025, dashMaterial);
+    sideRoofRail.position.set(side * 1.64, 2.02, 0.45);
+    const sideBeltRail = roundedBox(0.09, 0.075, 1.9, 0.025, dashTopMaterial);
+    sideBeltRail.position.set(side * 1.64, 0.72, 0.45);
+    const rearPillar = roundedBox(0.085, 1.38, 0.095, 0.025, dashMaterial);
+    rearPillar.position.set(side * 1.64, 1.35, 1.36);
+    const doorPanel = roundedBox(0.12, 0.72, 1.82, 0.05, dashMaterial);
+    doorPanel.position.set(side * 1.64, 0.32, 0.45);
+    const doorInset = roundedBox(0.018, 0.36, 0.72, 0.035, dashTopMaterial);
+    doorInset.position.set(side * 1.57, 0.34, 0.48);
+    cockpit.add(sideWindow, sideRoofRail, sideBeltRail, rearPillar, doorPanel, doorInset);
   }
 
   const mirror = roundedBox(0.38, 0.12, 0.045, 0.025, trimMaterial);
