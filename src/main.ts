@@ -412,19 +412,28 @@ function loop(now: number) {
   const input = getInput();
 
   if (running && !paused) {
-    simulationAccumulator = Math.min(
-      simulationAccumulator + frameDt,
-      SIMULATION_STEP * MAX_SIMULATION_STEPS,
-    );
     let collisionThisFrame = false;
     let nearMissThisFrame = false;
-    let simulationSteps = 0;
-    while (simulationAccumulator >= SIMULATION_STEP && simulationSteps < MAX_SIMULATION_STEPS) {
-      simulation.update(SIMULATION_STEP, input);
-      collisionThisFrame ||= simulation.collision;
-      nearMissThisFrame ||= simulation.nearMiss;
-      simulationAccumulator -= SIMULATION_STEP;
-      simulationSteps++;
+    if (view.lowPower) {
+      simulationAccumulator = Math.min(
+        simulationAccumulator + frameDt,
+        SIMULATION_STEP * MAX_SIMULATION_STEPS,
+      );
+      let simulationSteps = 0;
+      while (simulationAccumulator >= SIMULATION_STEP && simulationSteps < MAX_SIMULATION_STEPS) {
+        simulation.update(SIMULATION_STEP, input);
+        collisionThisFrame ||= simulation.collision;
+        nearMissThisFrame ||= simulation.nearMiss;
+        simulationAccumulator -= SIMULATION_STEP;
+        simulationSteps++;
+      }
+    } else {
+      // Desktop renders every animation frame. Matching physics to that frame
+      // avoids the 0/2 fixed-step cadence that made the car and camera jitter.
+      simulationAccumulator = 0;
+      simulation.update(Math.min(frameDt, 0.05), input);
+      collisionThisFrame = simulation.collision;
+      nearMissThisFrame = simulation.nearMiss;
     }
     if (collisionThisFrame) {
       hitFlash = 1;

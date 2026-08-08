@@ -1472,7 +1472,7 @@ export class GameRenderer {
   constructor(canvas: HTMLCanvasElement) {
     this.playerCar = createCar(DEFAULT_CUSTOMIZATION.color, true, DEFAULT_CUSTOMIZATION);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !VERY_LOW_END, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(LOW_POWER_MODE ? 1 : Math.min(devicePixelRatio, 1.5));
+    this.renderer.setPixelRatio(LOW_POWER_MODE ? 1 : Math.min(devicePixelRatio, 1.25));
     this.renderer.shadowMap.enabled = !LOW_POWER_MODE;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
