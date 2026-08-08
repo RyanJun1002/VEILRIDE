@@ -287,11 +287,11 @@ function createCockpit() {
   const accent = new THREE.MeshStandardMaterial({ color: 0xff6338, emissive: 0x7e1e0c, emissiveIntensity: 0.65, roughness: 0.35 });
 
   const dashboard = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.24, 0.48), matte);
-  dashboard.position.set(0, 0.86, -0.55);
+  dashboard.position.set(0, 0.78, -0.55);
   cockpit.add(dashboard);
 
   const cluster = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.25, 0.06), trim);
-  cluster.position.set(-0.38, 0.99, -0.275);
+  cluster.position.set(-0.38, 0.9, -0.275);
   cockpit.add(cluster);
 
   const clusterCanvas = document.createElement('canvas');
@@ -305,11 +305,11 @@ function createCockpit() {
     new THREE.PlaneGeometry(0.62, 0.25),
     new THREE.MeshBasicMaterial({ map: clusterTexture, toneMapped: false }),
   );
-  clusterDisplay.position.set(-0.38, 0.99, -0.225);
+  clusterDisplay.position.set(-0.38, 0.9, -0.225);
   cockpit.add(clusterDisplay);
 
   const steeringWheel = new THREE.Group();
-  steeringWheel.position.set(-0.39, 0.92, -0.22);
+  steeringWheel.position.set(-0.39, 0.83, -0.22);
   steeringWheel.rotation.x = 0.22;
   const wheelRim = new THREE.Mesh(createDShapeRimGeometry(0.153, 0.023), wheelLeather);
   wheelRim.castShadow = true;
@@ -380,8 +380,20 @@ function createCockpit() {
 
   const column = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.36, 12), trim);
   column.rotation.x = Math.PI / 2;
-  column.position.set(-0.39, 0.92, -0.39);
+  column.position.set(-0.39, 0.83, -0.39);
   cockpit.add(steeringWheel, column);
+
+  const floor = roundedBox(2.12, 0.12, 4.1, 0.08, leather);
+  floor.position.set(0, 0.22, -0.52);
+  const frontBulkhead = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.46, 0.12), matte);
+  frontBulkhead.position.set(0, 0.45, -0.77);
+  const centerTunnel = roundedBox(0.3, 0.2, 1.45, 0.08, carbon);
+  centerTunnel.position.set(0.18, 0.35, 0.22);
+  const driverSeatBase = roundedBox(0.58, 0.2, 0.72, 0.12, leather);
+  driverSeatBase.position.set(-0.39, 0.38, 0.68);
+  const passengerSeatBase = driverSeatBase.clone();
+  passengerSeatBase.position.x = 0.42;
+  cockpit.add(floor, frontBulkhead, centerTunnel, driverSeatBase, passengerSeatBase);
 
   for (const side of [-1, 1]) {
     const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.042, 0.72, 0.065), matte);
@@ -448,26 +460,27 @@ type CameraProfile = {
   lookHeight: number;
 };
 
-function createBikeCockpit() {
+function createBikeCockpit(color: number) {
   const cockpit = new THREE.Group();
   const metal = new THREE.MeshStandardMaterial({ color: 0xadb8b4, metalness: 0.92, roughness: 0.2 });
   const dark = new THREE.MeshStandardMaterial({ color: 0x141b1a, metalness: 0.35, roughness: 0.58 });
   const glass = new THREE.MeshPhysicalMaterial({ color: 0xa9d3d4, transparent: true, opacity: 0.2, roughness: 0.05, side: THREE.DoubleSide, depthWrite: false });
+  const paint = new THREE.MeshPhysicalMaterial({ color, metalness: 0.5, roughness: 0.23, clearcoat: 1 });
   const steeringWheel = new THREE.Group();
-  steeringWheel.position.set(0, 1.15, -0.58);
-  const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.78, 12), metal);
+  steeringWheel.position.set(0, 1.04, -1.1);
+  const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.54, 12), metal);
   bar.rotation.z = Math.PI / 2;
   steeringWheel.add(bar);
   for (const side of [-1, 1]) {
     const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.034, 0.19, 12), dark);
     grip.rotation.z = Math.PI / 2;
-    grip.position.x = side * 0.39;
+    grip.position.x = side * 0.29;
     steeringWheel.add(grip);
     const mirrorStem = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.28, 8), metal);
-    mirrorStem.position.set(side * 0.32, 0.13, 0);
+    mirrorStem.position.set(side * 0.24, 0.13, 0);
     mirrorStem.rotation.z = side * -0.42;
     const mirror = new THREE.Mesh(new THREE.CircleGeometry(0.09, 18), glass);
-    mirror.position.set(side * 0.39, 0.25, 0.01);
+    mirror.position.set(side * 0.31, 0.25, 0.01);
     steeringWheel.add(mirrorStem, mirror);
   }
   cockpit.add(steeringWheel);
@@ -482,13 +495,18 @@ function createBikeCockpit() {
     new THREE.PlaneGeometry(0.24, 0.1),
     new THREE.MeshBasicMaterial({ map: clusterTexture, toneMapped: false }),
   );
-  cluster.position.set(0, 1.16, -0.66);
+  cluster.position.set(0, 1.08, -1.18);
   cockpit.add(cluster);
 
   const windscreen = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.55), glass);
-  windscreen.position.set(0, 1.38, -0.78);
+  windscreen.position.set(0, 1.3, -1.32);
   windscreen.rotation.x = -0.18;
-  cockpit.add(windscreen);
+  const tankTop = roundedBox(0.5, 0.26, 0.68, 0.15, paint);
+  tankTop.position.set(0, 0.76, -0.72);
+  tankTop.rotation.x = -0.08;
+  const forkCrown = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.07, 0.12), metal);
+  forkCrown.position.set(0, 0.92, -1.1);
+  cockpit.add(windscreen, tankTop, forkCrown);
   cockpit.userData.steeringWheel = steeringWheel;
   cockpit.userData.clusterContext = clusterContext;
   cockpit.userData.clusterTexture = clusterTexture;
@@ -552,6 +570,14 @@ function createBusCockpit() {
   const ticketConsole = roundedBox(0.3, 0.55, 0.42, 0.06, dashMaterial);
   ticketConsole.position.set(0.78, 0.43, -0.16);
   cockpit.add(buttonPanel, ticketConsole);
+
+  const floor = roundedBox(2.08, 0.14, 2.7, 0.08, dashMaterial);
+  floor.position.set(0, 0.08, 0.2);
+  const driverPedestal = roundedBox(0.72, 0.25, 0.78, 0.1, trimMaterial);
+  driverPedestal.position.set(-0.56, 0.22, 0.56);
+  const aisleTrim = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.04, 2.35), trimMaterial);
+  aisleTrim.position.set(0.33, 0.17, 0.18);
+  cockpit.add(floor, driverPedestal, aisleTrim);
 
   const windshield = new THREE.Mesh(new THREE.PlaneGeometry(2.08, 1.28), glassMaterial);
   windshield.position.set(0, 1.5, -0.73);
@@ -772,7 +798,7 @@ function createMotorcycle(appearance: CarCustomization, player: boolean) {
     group.add(arm, leg);
   }
   group.add(handlebar, headlight, tail, exhaust, torso, helmet, helmetVisor);
-  const cockpit = player ? createBikeCockpit() : null;
+  const cockpit = player ? createBikeCockpit(appearance.color) : null;
   return finishCustomVehicle(group, wheels, frontWheels, appearance, cockpit, 0.43, {
     height: 1.32, forwardOffset: 0.3, sideOffset: 0, chaseHeight: 2.75, chaseDistance: 5.6, lookHeight: 0.92,
   }, 0.02);
