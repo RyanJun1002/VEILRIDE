@@ -1,3 +1,5 @@
+import { CAR_SPECS, type CarModelId } from './cars';
+
 export type InputState = {
   throttle: number;
   boost: number;
@@ -42,6 +44,7 @@ export class DrivingSimulation {
   traffic: TrafficState[] = [];
   nearMiss = false;
   collision = false;
+  private carSpec = CAR_SPECS['mist-gt'];
 
   constructor() {
     const colors = [0xe8e2d8, 0x19282c, 0xc64b36, 0xd9a441, 0x526d78, 0x6c4a63];
@@ -85,6 +88,10 @@ export class DrivingSimulation {
     p.wheelAngle = 0;
   }
 
+  setCarModel(model: CarModelId) {
+    this.carSpec = CAR_SPECS[model];
+  }
+
   restart() {
     this.player = this.freshPlayer();
     this.traffic.forEach((car, i) => {
@@ -101,10 +108,10 @@ export class DrivingSimulation {
     const offroad = Math.abs(p.x - roadCenter(p.z)) > 4.3;
     const speed = Math.abs(p.forwardSpeed);
     const baseSpeedLimit = 25; // 90 km/h
-    const boostPowerCurve = Math.max(0, 1 - speed / 86);
+    const boostPowerCurve = Math.max(0, 1 - speed / (this.carSpec.maxSpeed + 6));
     const engineAcceleration = input.boost
-      ? 15 * boostPowerCurve
-      : speed < baseSpeedLimit ? 8.2 : 0;
+      ? this.carSpec.boostAcceleration * boostPowerCurve
+      : speed < baseSpeedLimit ? this.carSpec.acceleration : 0;
     const acceleration = input.throttle * engineAcceleration - input.brake * 13;
     const drag = 0.18 + speed * 0.004 + speed * speed * 0.00022 + (offroad ? 2.2 : 0);
     p.forwardSpeed += acceleration * dt;
@@ -115,19 +122,19 @@ export class DrivingSimulation {
       p.forwardSpeed -= Math.sign(p.forwardSpeed) * Math.min(Math.abs(p.forwardSpeed), 11.5 * dt);
     }
     p.forwardSpeed -= Math.sign(p.forwardSpeed) * Math.min(Math.abs(p.forwardSpeed), drag * dt);
-    p.forwardSpeed = Math.max(-6, Math.min(offroad ? 38 : 80, p.forwardSpeed));
+    p.forwardSpeed = Math.max(-6, Math.min(offroad ? this.carSpec.maxSpeed * 0.55 : this.carSpec.maxSpeed, p.forwardSpeed));
 
     const speedFactor = Math.min(Math.abs(p.forwardSpeed) / 80, 1);
     p.steerAngle += (input.steer - p.steerAngle) * Math.min(1, dt * 3.2);
 
     // Dynamic bicycle model. The tires create lateral force only up to their
     // friction limit; beyond it, steering input becomes understeer or a slide.
-    const mass = 1450;
-    const yawInertia = 2450;
+    const mass = this.carSpec.mass;
+    const yawInertia = 2450 * (mass / 1450);
     const frontAxle = 1.22;
     const rearAxle = 1.48;
     const wheelbase = frontAxle + rearAxle;
-    const maxWheelAngle = 0.46 + (0.035 - 0.46) * speedFactor;
+    const maxWheelAngle = (0.46 + (0.035 - 0.46) * speedFactor) * this.carSpec.steering;
     const wheelAngle = p.steerAngle * maxWheelAngle;
     p.wheelAngle = wheelAngle;
     const longitudinalSpeed = p.forwardSpeed;
@@ -138,7 +145,7 @@ export class DrivingSimulation {
       p.lateralSpeed *= Math.max(0, 1 - dt * 8);
     } else {
       const gravity = 9.81;
-      const roadGrip = offroad ? 0.58 : 1.14;
+      const roadGrip = offroad ? this.carSpec.offroadGrip : this.carSpec.grip;
       const frontGrip = offroad ? roadGrip : roadGrip * 0.94;
       const rearGrip = input.handbrake
         ? roadGrip * 0.46

@@ -4,6 +4,8 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import type { TrafficState, VehicleState } from './simulation';
 import { roadCenter, roadTangent } from './simulation';
+import { DEFAULT_CUSTOMIZATION, type CarCustomization } from './cars';
+import type { NetworkPlayerState } from './multiplayer';
 
 const ROAD_WIDTH = 8.4;
 const CHUNK_LENGTH = 140;
@@ -437,12 +439,14 @@ function createCockpit() {
   return cockpit;
 }
 
-export function createCar(color: number, player = false) {
+export function createCar(color: number, player = false, customization?: CarCustomization) {
+  const appearance = customization ?? { ...DEFAULT_CUSTOMIZATION, color };
+  const detailed = player || Boolean(customization);
   const group = new THREE.Group();
-  const paint = new THREE.MeshPhysicalMaterial({ color, metalness: 0.62, roughness: 0.24, clearcoat: 1, clearcoatRoughness: 0.16 });
+  const paint = new THREE.MeshPhysicalMaterial({ color: appearance.color, metalness: 0.62, roughness: 0.24, clearcoat: 1, clearcoatRoughness: 0.16 });
   const dark = new THREE.MeshStandardMaterial({ color: 0x101416, metalness: 0.4, roughness: 0.32 });
   const carbon = new THREE.MeshPhysicalMaterial({ color: 0x151b1b, metalness: 0.72, roughness: 0.27, clearcoat: 0.65, clearcoatRoughness: 0.25 });
-  const gunmetal = new THREE.MeshStandardMaterial({ color: 0x4c5957, metalness: 0.9, roughness: 0.22 });
+  const gunmetal = new THREE.MeshStandardMaterial({ color: appearance.wheelColor, metalness: 0.9, roughness: 0.22 });
   const glass = new THREE.MeshPhysicalMaterial({
     color: 0x8eb9bd,
     metalness: 0.08,
@@ -493,7 +497,7 @@ export function createCar(color: number, player = false) {
   group.add(rearDeck);
 
   const cabin = new THREE.Group();
-  if (player) {
+  if (detailed) {
     const windshield = createGlassPanel([
       [-0.78, 0.96, -0.76],
       [0.78, 0.96, -0.76],
@@ -537,7 +541,7 @@ export function createCar(color: number, player = false) {
   group.add(roof);
 
   const exteriorCabinParts: THREE.Object3D[] = [];
-  if (player) {
+  if (detailed) {
     const windshieldCowl = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.045, 0.075), dark);
     windshieldCowl.position.set(0, 0.96, -0.755);
     const rearGlassBase = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.045, 0.075), dark);
@@ -596,7 +600,7 @@ export function createCar(color: number, player = false) {
   rearBumper.position.set(0, 0.34, 2.16);
   group.add(frontGrille, rearBumper);
 
-  if (player) {
+  if (detailed) {
     for (const x of [-0.48, 0.48]) {
       const hoodVent = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.025, 0.62), carbon);
       hoodVent.position.set(x, 0.955, -1.22);
@@ -617,10 +621,10 @@ export function createCar(color: number, player = false) {
       const wheel = new THREE.Mesh(wheelGeometry, rubber);
       wheel.rotation.z = Math.PI / 2;
       wheel.castShadow = true;
-      const rim = new THREE.Mesh(rimGeometry, player ? gunmetal : chrome);
+      const rim = new THREE.Mesh(rimGeometry, detailed ? gunmetal : chrome);
       rim.rotation.z = Math.PI / 2;
       spinPivot.add(wheel, rim);
-      if (player) {
+      if (detailed) {
         const outward = Math.sign(x) * 0.157;
         const rimLip = new THREE.Mesh(new THREE.TorusGeometry(0.225, 0.018, 8, 28), chrome);
         rimLip.rotation.y = Math.PI / 2;
@@ -670,16 +674,19 @@ export function createCar(color: number, player = false) {
   rearLightBar.position.set(0, 0.72, 2.222);
   group.add(rearLightBar);
 
-  if (player) {
-    const spoiler = roundedBox(1.62, 0.075, 0.28, 0.07, carbon);
-    spoiler.position.set(0, 1.08, 1.91);
-    spoiler.rotation.x = -0.06;
-    for (const x of [-0.55, 0.55]) {
-      const strut = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.32, 0.075), carbon);
-      strut.position.set(x, 0.9, 1.9);
-      const endPlate = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.2, 0.34), carbon);
-      endPlate.position.set(x * 1.42, 1.08, 1.91);
-      group.add(strut, endPlate);
+  if (detailed) {
+    if (appearance.spoiler) {
+      const spoiler = roundedBox(1.62, 0.075, 0.28, 0.07, carbon);
+      spoiler.position.set(0, 1.08, 1.91);
+      spoiler.rotation.x = -0.06;
+      group.add(spoiler);
+      for (const x of [-0.55, 0.55]) {
+        const strut = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.32, 0.075), carbon);
+        strut.position.set(x, 0.9, 1.9);
+        const endPlate = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.2, 0.34), carbon);
+        endPlate.position.set(x * 1.42, 1.08, 1.91);
+        group.add(strut, endPlate);
+      }
     }
 
     const diffuser = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.13, 0.28), carbon);
@@ -732,9 +739,55 @@ export function createCar(color: number, player = false) {
     badgeSlashRight.position.x = 0.021;
     badgeSlashRight.rotation.z = 0.3;
 
-    const cockpit = createCockpit();
-    group.add(spoiler, plate, rearBadge, badgeSlashLeft, badgeSlashRight, cockpit);
-    group.userData.cockpit = cockpit;
+    group.add(plate, rearBadge, badgeSlashLeft, badgeSlashRight);
+    if (player) {
+      const cockpit = createCockpit();
+      group.add(cockpit);
+      group.userData.cockpit = cockpit;
+    }
+  }
+
+  if (appearance.model === 'apex-r') {
+    roof.position.y = 1.355;
+    for (const side of [-1, 1]) {
+      const canard = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.035, 0.16), carbon);
+      canard.position.set(side * 0.78, 0.39, -2.2);
+      canard.rotation.y = side * -0.2;
+      group.add(canard);
+    }
+    const centerBlade = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.026, 1.22), carbon);
+    centerBlade.position.set(0, 0.96, -1.25);
+    group.add(centerBlade);
+  } else if (appearance.model === 'ridge-x') {
+    group.userData.rideHeight = 0.11;
+    for (const z of [-0.28, 0.5]) {
+      const rackBar = new THREE.Mesh(new THREE.BoxGeometry(1.58, 0.055, 0.075), carbon);
+      rackBar.position.set(0, 1.49, z);
+      group.add(rackBar);
+    }
+    for (const x of [-0.48, -0.16, 0.16, 0.48]) {
+      const rallyLamp = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.06, 16), white);
+      rallyLamp.rotation.x = Math.PI / 2;
+      rallyLamp.position.set(x, 1.51, -0.38);
+      group.add(rallyLamp);
+    }
+    for (const x of [-0.88, 0.88]) {
+      for (const z of [-1.55, 1.58]) {
+        const mudFlap = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.25, 0.035), rubber);
+        mudFlap.position.set(x, 0.24, z);
+        group.add(mudFlap);
+      }
+    }
+  } else if (appearance.model === 'touring-s') {
+    roof.position.y = 1.42;
+    const deckTrim = new THREE.Mesh(new THREE.BoxGeometry(1.46, 0.045, 0.08), chrome);
+    deckTrim.position.set(0, 0.96, 1.82);
+    group.add(deckTrim);
+    for (const side of [-1, 1]) {
+      const lowerChrome = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.04, 2.45), chrome);
+      lowerChrome.position.set(side * 0.99, 0.37, 0.05);
+      group.add(lowerChrome);
+    }
   }
 
   group.traverse((obj) => {
@@ -746,6 +799,7 @@ export function createCar(color: number, player = false) {
   group.userData.wheels = wheels;
   group.userData.frontWheels = frontWheels;
   group.userData.firstPersonHidden = [body, cabin, roof, ...exteriorCabinParts];
+  group.userData.appearance = appearance;
   return group;
 }
 
@@ -864,13 +918,19 @@ function makeMountainGeometry(seed: number) {
 }
 
 type WorldChunk = { index: number; group: THREE.Group };
+type RemoteCarRender = {
+  car: THREE.Group;
+  target: NetworkPlayerState;
+  appearanceKey: string;
+};
 
 export class GameRenderer {
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(57, 1, 0.1, 1100);
   readonly renderer: THREE.WebGLRenderer;
-  readonly playerCar = createCar(0xe95a35, true);
+  playerCar: THREE.Group;
   readonly trafficCars = new Map<number, THREE.Group>();
+  readonly remoteCars = new Map<string, RemoteCarRender>();
   readonly chunks: WorldChunk[] = [];
   private composer: EffectComposer;
   private cameraMode = 0;
@@ -895,6 +955,7 @@ export class GameRenderer {
   ];
 
   constructor(canvas: HTMLCanvasElement) {
+    this.playerCar = createCar(DEFAULT_CUSTOMIZATION.color, true, DEFAULT_CUSTOMIZATION);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
     this.renderer.shadowMap.enabled = true;
@@ -950,6 +1011,59 @@ export class GameRenderer {
         this.trafficCars.set(state.id, car);
       }
     }
+  }
+
+  setPlayerCustomization(customization: CarCustomization) {
+    const previous = this.playerCar;
+    const position = previous.position.clone();
+    const rotation = previous.rotation.clone();
+    this.scene.remove(previous);
+    this.disposeCar(previous);
+    this.playerCar = createCar(customization.color, true, customization);
+    this.playerCar.position.copy(position);
+    this.playerCar.rotation.copy(rotation);
+    this.scene.add(this.playerCar);
+  }
+
+  setRemotePlayers(players: NetworkPlayerState[]) {
+    const activeIds = new Set(players.map(player => player.id));
+    for (const state of players) {
+      const appearanceKey = JSON.stringify(state.appearance);
+      const existing = this.remoteCars.get(state.id);
+      if (!existing || existing.appearanceKey !== appearanceKey) {
+        if (existing) {
+          this.scene.remove(existing.car);
+          this.disposeCar(existing.car);
+        }
+        const car = createCar(state.appearance.color, false, state.appearance);
+        const rideHeight = (car.userData.rideHeight as number | undefined) ?? 0;
+        car.position.set(state.x, 0.04 + rideHeight, state.z);
+        car.rotation.y = -state.heading;
+        this.scene.add(car);
+        this.remoteCars.set(state.id, { car, target: state, appearanceKey });
+      } else {
+        existing.target = state;
+      }
+    }
+    for (const [id, entry] of this.remoteCars) {
+      if (activeIds.has(id)) continue;
+      this.scene.remove(entry.car);
+      this.disposeCar(entry.car);
+      this.remoteCars.delete(id);
+    }
+  }
+
+  private disposeCar(car: THREE.Group) {
+    car.traverse(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      object.geometry.dispose();
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      for (const material of materials) {
+        const map = (material as THREE.MeshStandardMaterial).map;
+        map?.dispose();
+        material.dispose();
+      }
+    });
   }
 
   cycleCamera() {
@@ -1190,7 +1304,8 @@ export class GameRenderer {
       if (chunk.index !== index) this.rebuildChunk(chunk, index);
     }
 
-    this.playerCar.position.set(player.x, 0.04, player.z);
+    const playerRideHeight = (this.playerCar.userData.rideHeight as number | undefined) ?? 0;
+    this.playerCar.position.set(player.x, 0.04 + playerRideHeight, player.z);
     this.playerCar.rotation.y = -player.heading;
     this.playerCar.rotation.z = 0;
     const wheels = this.playerCar.userData.wheels as THREE.Group[];
@@ -1221,6 +1336,23 @@ export class GameRenderer {
       car.rotation.y = -roadTangent(state.z) + (state.direction === -1 ? Math.PI : 0);
       const npcWheels = car.userData.wheels as THREE.Group[];
       for (const wheel of npcWheels) wheel.rotation.x -= state.speed * dt / 0.39;
+    }
+
+    const remoteEase = 1 - Math.exp(-dt * 11);
+    for (const entry of this.remoteCars.values()) {
+      const { car, target } = entry;
+      const rideHeight = (car.userData.rideHeight as number | undefined) ?? 0;
+      car.position.lerp(new THREE.Vector3(target.x, 0.04 + rideHeight, target.z), remoteEase);
+      const targetRotation = -target.heading;
+      const rotationDelta = Math.atan2(
+        Math.sin(targetRotation - car.rotation.y),
+        Math.cos(targetRotation - car.rotation.y),
+      );
+      car.rotation.y += rotationDelta * remoteEase;
+      const remoteWheels = car.userData.wheels as THREE.Group[];
+      for (const wheel of remoteWheels) wheel.rotation.x -= target.forwardSpeed * dt / 0.39;
+      const remoteFrontWheels = car.userData.frontWheels as THREE.Group[];
+      for (const wheel of remoteFrontWheels) wheel.rotation.y = -target.wheelAngle;
     }
 
     const forward = new THREE.Vector3(Math.sin(player.heading), 0, -Math.cos(player.heading));

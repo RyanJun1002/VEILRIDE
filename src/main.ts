@@ -1,6 +1,16 @@
 import './style.css';
-import { DrivingSimulation, type InputState } from './simulation';
+import { DrivingSimulation, roadCenter, type InputState } from './simulation';
 import { GameRenderer } from './renderer';
+import {
+  CAR_COLORS,
+  CAR_SPECS,
+  DEFAULT_CUSTOMIZATION,
+  WHEEL_COLORS,
+  cloneCustomization,
+  type CarCustomization,
+  type CarModelId,
+} from './cars';
+import { MultiplayerSession, cleanRoomCode } from './multiplayer';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
 const menu = document.querySelector<HTMLElement>('#menu')!;
@@ -13,10 +23,46 @@ const speedBar = document.querySelector<HTMLElement>('#speedBar')!;
 const nearMiss = document.querySelector<HTMLElement>('#nearMiss')!;
 const hint = document.querySelector<HTMLElement>('#hint')!;
 const toast = document.querySelector<HTMLElement>('#toast')!;
+const paintPicker = document.querySelector<HTMLElement>('#paintPicker')!;
+const wheelPicker = document.querySelector<HTMLElement>('#wheelPicker')!;
+const spoilerToggle = document.querySelector<HTMLInputElement>('#spoilerToggle')!;
+const selectedClass = document.querySelector<HTMLElement>('#selectedClass')!;
+const accelStat = document.querySelector<HTMLElement>('#accelStat')!;
+const topSpeedStat = document.querySelector<HTMLElement>('#speedStat')!;
+const gripStat = document.querySelector<HTMLElement>('#gripStat')!;
+const networkStatus = document.querySelector<HTMLElement>('#networkStatus')!;
+const multiplayerHud = document.querySelector<HTMLElement>('#multiplayerHud')!;
+const roomCodeInput = document.querySelector<HTMLInputElement>('#roomCodeInput')!;
+const roomCodeDisplay = document.querySelector<HTMLButtonElement>('#roomCodeDisplay')!;
+const soloButton = document.querySelector<HTMLButtonElement>('#soloButton')!;
+const hostButton = document.querySelector<HTMLButtonElement>('#hostButton')!;
+const joinButton = document.querySelector<HTMLButtonElement>('#joinButton')!;
+
+function loadCustomization(): CarCustomization {
+  try {
+    const saved = JSON.parse(localStorage.getItem('mistline-car') ?? '') as Partial<CarCustomization>;
+    if (saved.model && saved.model in CAR_SPECS) {
+      return {
+        model: saved.model,
+        color: typeof saved.color === 'number' ? saved.color : DEFAULT_CUSTOMIZATION.color,
+        wheelColor: typeof saved.wheelColor === 'number' ? saved.wheelColor : DEFAULT_CUSTOMIZATION.wheelColor,
+        spoiler: typeof saved.spoiler === 'boolean' ? saved.spoiler : DEFAULT_CUSTOMIZATION.spoiler,
+      };
+    }
+  } catch {
+    // Ignore invalid saved garage data and use the factory setup.
+  }
+  return cloneCustomization(DEFAULT_CUSTOMIZATION);
+}
+
+let customization = loadCustomization();
 
 const simulation = new DrivingSimulation();
 const view = new GameRenderer(canvas);
+simulation.setCarModel(customization.model);
+view.setPlayerCustomization(customization);
 view.setTraffic(simulation.traffic);
+const multiplayer = new MultiplayerSession();
 
 const keys = new Set<string>();
 const touch = new Set<string>();
@@ -26,6 +72,142 @@ let startedAt = 0;
 let lastTime = performance.now();
 let hitFlash = 0;
 let audio: EngineAudio | null = null;
+let nextNetworkSync = 0;
+
+function hexColor(value: number) {
+  return `#${value.toString(16).padStart(6, '0')}`;
+}
+
+function updateGarageUi() {
+  const spec = CAR_SPECS[customization.model];
+  document.querySelectorAll<HTMLButtonElement>('[data-car]').forEach(button => {
+    button.classList.toggle('is-selected', button.dataset.car === customization.model);
+  });
+  paintPicker.querySelectorAll<HTMLButtonElement>('button').forEach(button => {
+    button.classList.toggle('is-selected', Number(button.dataset.color) === customization.color);
+  });
+  wheelPicker.querySelectorAll<HTMLButtonElement>('button').forEach(button => {
+    button.classList.toggle('is-selected', Number(button.dataset.color) === customization.wheelColor);
+  });
+  spoilerToggle.checked = customization.spoiler;
+  selectedClass.textContent = spec.className;
+  accelStat.style.transform = `scaleX(${spec.acceleration / 10})`;
+  topSpeedStat.style.transform = `scaleX(${spec.maxSpeed / 90})`;
+  gripStat.style.transform = `scaleX(${spec.grip / 1.25})`;
+}
+
+function applyCustomization() {
+  localStorage.setItem('mistline-car', JSON.stringify(customization));
+  simulation.setCarModel(customization.model);
+  view.setPlayerCustomization(customization);
+  updateGarageUi();
+}
+
+for (const paint of CAR_COLORS) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.title = paint.name;
+  button.dataset.color = paint.value.toString();
+  button.style.setProperty('--swatch', hexColor(paint.value));
+  button.addEventListener('click', () => {
+    customization = { ...customization, color: paint.value };
+    applyCustomization();
+  });
+  paintPicker.append(button);
+}
+
+for (const wheelColor of WHEEL_COLORS) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.dataset.color = wheelColor.toString();
+  button.style.setProperty('--swatch', hexColor(wheelColor));
+  button.addEventListener('click', () => {
+    customization = { ...customization, wheelColor };
+    applyCustomization();
+  });
+  wheelPicker.append(button);
+}
+
+document.querySelectorAll<HTMLButtonElement>('[data-car]').forEach(button => {
+  button.addEventListener('click', () => {
+    customization = { ...customization, model: button.dataset.car as CarModelId };
+    applyCustomization();
+  });
+});
+
+spoilerToggle.addEventListener('change', () => {
+  customization = { ...customization, spoiler: spoilerToggle.checked };
+  applyCustomization();
+});
+
+updateGarageUi();
+
+function setOnlineControls(mode: 'solo' | 'host' | 'join') {
+  soloButton.classList.toggle('is-selected', mode === 'solo');
+  hostButton.classList.toggle('is-selected', mode === 'host');
+  joinButton.classList.toggle('is-selected', mode === 'join');
+}
+
+multiplayer.onStatus = (message, connected) => {
+  networkStatus.textContent = message;
+  multiplayerHud.classList.toggle('is-hidden', !connected);
+  roomCodeDisplay.classList.toggle('is-hidden', !multiplayer.code);
+  roomCodeDisplay.textContent = multiplayer.code ? `ROOM ${multiplayer.code}` : '';
+};
+
+multiplayer.onPlayerCount = count => {
+  const label = multiplayerHud.querySelector('span')!;
+  label.textContent = `${count} PLAYER${count > 1 ? 'S' : ''}`;
+};
+
+soloButton.addEventListener('click', () => {
+  multiplayer.disconnect();
+  simulation.player.x = roadCenter(simulation.player.z) - 2;
+  setOnlineControls('solo');
+});
+
+hostButton.addEventListener('click', async () => {
+  hostButton.disabled = true;
+  try {
+    await multiplayer.createRoom();
+    simulation.player.x = roadCenter(simulation.player.z) - 2;
+    setOnlineControls('host');
+  } catch (error) {
+    multiplayer.disconnect();
+    flashToast(error instanceof Error ? error.message : '방 생성에 실패했습니다.');
+  } finally {
+    hostButton.disabled = false;
+  }
+});
+
+joinButton.addEventListener('click', async () => {
+  const code = cleanRoomCode(roomCodeInput.value);
+  roomCodeInput.value = code;
+  joinButton.disabled = true;
+  try {
+    await multiplayer.joinRoom(code);
+    simulation.player.x = roadCenter(simulation.player.z) + 2;
+    setOnlineControls('join');
+  } catch (error) {
+    multiplayer.disconnect();
+    setOnlineControls('solo');
+    flashToast(error instanceof Error ? error.message : '방 참가에 실패했습니다.');
+  } finally {
+    joinButton.disabled = false;
+  }
+});
+
+roomCodeDisplay.addEventListener('click', async () => {
+  if (!multiplayer.code) return;
+  await navigator.clipboard.writeText(multiplayer.code);
+  flashToast(`방 코드 ${multiplayer.code} 복사됨`);
+});
+
+roomCodeInput.addEventListener('input', () => {
+  roomCodeInput.value = cleanRoomCode(roomCodeInput.value);
+});
+
+addEventListener('beforeunload', () => multiplayer.disconnect());
 
 class EngineAudio {
   private context = new AudioContext();
@@ -180,6 +362,19 @@ function loop(now: number) {
     if (now - startedAt > 0) void idleInput;
   }
 
+  if (multiplayer.active && now >= nextNetworkSync) {
+    const player = simulation.player;
+    multiplayer.sendState({
+      x: player.x,
+      z: player.z,
+      heading: player.heading,
+      forwardSpeed: player.forwardSpeed,
+      wheelAngle: player.wheelAngle,
+      appearance: { ...customization },
+    });
+    nextNetworkSync = now + 66;
+  }
+  view.setRemotePlayers(multiplayer.getRemotePlayers());
   view.update(simulation.player, simulation.traffic, dt);
   view.render();
   hitFlash = Math.max(0, hitFlash - dt * 2.8);
