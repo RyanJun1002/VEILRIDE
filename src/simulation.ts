@@ -107,53 +107,61 @@ export class DrivingSimulation {
 
     const offroad = Math.abs(p.x - roadCenter(p.z)) > 4.3;
     const speed = Math.abs(p.forwardSpeed);
-    const baseSpeedLimit = 25; // 90 km/h
+    const dynamics = this.carSpec.dynamics;
+    const baseSpeedLimit = Math.min(25, this.carSpec.maxSpeed); // 일반 가속은 최대 90 km/h
     const boostPowerCurve = Math.max(0, 1 - speed / (this.carSpec.maxSpeed + 6));
     const engineAcceleration = input.boost
       ? this.carSpec.boostAcceleration * boostPowerCurve
       : speed < baseSpeedLimit ? this.carSpec.acceleration : 0;
-    const acceleration = input.throttle * engineAcceleration - input.brake * 13;
-    const drag = 0.18 + speed * 0.004 + speed * speed * 0.00022 + (offroad ? 2.2 : 0);
+    const acceleration = input.throttle * engineAcceleration - input.brake * dynamics.brakePower;
+    const drag = dynamics.rollingResistance
+      + speed * dynamics.linearDrag
+      + speed * speed * dynamics.aeroDrag
+      + (offroad ? 2.2 + dynamics.rollingResistance * 2 : 0);
     p.forwardSpeed += acceleration * dt;
     if (input.throttle && !input.boost && speed <= baseSpeedLimit && p.forwardSpeed > baseSpeedLimit) {
       p.forwardSpeed = baseSpeedLimit;
     }
     if (input.handbrake) {
-      p.forwardSpeed -= Math.sign(p.forwardSpeed) * Math.min(Math.abs(p.forwardSpeed), 11.5 * dt);
+      const handbrakeDeceleration = dynamics.brakePower * (1.02 - dynamics.handbrakeRearGrip * 0.35);
+      p.forwardSpeed -= Math.sign(p.forwardSpeed) * Math.min(Math.abs(p.forwardSpeed), handbrakeDeceleration * dt);
     }
     p.forwardSpeed -= Math.sign(p.forwardSpeed) * Math.min(Math.abs(p.forwardSpeed), drag * dt);
     p.forwardSpeed = Math.max(-6, Math.min(offroad ? this.carSpec.maxSpeed * 0.55 : this.carSpec.maxSpeed, p.forwardSpeed));
 
     const speedFactor = Math.min(Math.abs(p.forwardSpeed) / 80, 1);
-    p.steerAngle += (input.steer - p.steerAngle) * Math.min(1, dt * 3.2);
+    p.steerAngle += (input.steer - p.steerAngle) * Math.min(1, dt * dynamics.steeringResponse);
 
     // Dynamic bicycle model. The tires create lateral force only up to their
     // friction limit; beyond it, steering input becomes understeer or a slide.
     const mass = this.carSpec.mass;
-    const yawInertia = 2450 * (mass / 1450);
-    const frontAxle = 1.22;
-    const rearAxle = 1.48;
-    const wheelbase = frontAxle + rearAxle;
-    const maxWheelAngle = (0.46 + (0.035 - 0.46) * speedFactor) * this.carSpec.steering;
+    const wheelbase = dynamics.wheelbase;
+    const frontAxle = wheelbase * (1 - dynamics.frontWeight);
+    const rearAxle = wheelbase * dynamics.frontWeight;
+    const yawInertia = mass * wheelbase * wheelbase * dynamics.yawInertiaFactor;
+    const maxWheelAngle = (
+      dynamics.lowSpeedSteer
+      + (dynamics.highSpeedSteer - dynamics.lowSpeedSteer) * speedFactor
+    ) * this.carSpec.steering;
     const wheelAngle = p.steerAngle * maxWheelAngle;
     p.wheelAngle = wheelAngle;
     const longitudinalSpeed = p.forwardSpeed;
 
     if (Math.abs(longitudinalSpeed) < 3) {
       const targetYawRate = (longitudinalSpeed / wheelbase) * Math.tan(wheelAngle);
-      p.yawRate += (targetYawRate - p.yawRate) * Math.min(1, dt * 7);
-      p.lateralSpeed *= Math.max(0, 1 - dt * 8);
+      p.yawRate += (targetYawRate - p.yawRate) * Math.min(1, dt * (2.5 + dynamics.steeringResponse));
+      p.lateralSpeed *= Math.max(0, 1 - dt * (4 + dynamics.stabilityAssist));
     } else {
       const gravity = 9.81;
       const roadGrip = offroad ? this.carSpec.offroadGrip : this.carSpec.grip;
       const frontGrip = offroad ? roadGrip : roadGrip * 0.94;
       const rearGrip = input.handbrake
-        ? roadGrip * 0.46
+        ? roadGrip * dynamics.handbrakeRearGrip
         : offroad ? roadGrip : roadGrip * 1.18;
       const frontLoad = mass * gravity * (rearAxle / wheelbase);
       const rearLoad = mass * gravity * (frontAxle / wheelbase);
-      const corneringStiffnessFront = 78000;
-      const corneringStiffnessRear = 108000;
+      const corneringStiffnessFront = dynamics.frontCorneringStiffness;
+      const corneringStiffnessRear = dynamics.rearCorneringStiffness;
       const safeSpeed = Math.max(3, Math.abs(longitudinalSpeed));
       const frontSlip = Math.atan2(
         p.lateralSpeed + frontAxle * p.yawRate,
@@ -170,9 +178,16 @@ export class DrivingSimulation {
       const yawAcceleration = (frontAxle * frontForce - rearAxle * rearForce) / yawInertia;
       p.lateralSpeed += clamp(lateralAcceleration, 20) * dt;
       p.yawRate += clamp(yawAcceleration, 12) * dt;
-      const stabilityAssist = input.handbrake ? 0.75 : offroad ? 0.6 : 2.8;
+      const stabilityAssist = input.handbrake
+        ? dynamics.stabilityAssist * 0.27
+        : offroad ? dynamics.offroadStability : dynamics.stabilityAssist;
       p.lateralSpeed *= Math.max(0, 1 - dt * stabilityAssist);
-      p.yawRate *= Math.max(0, 1 - dt * (input.handbrake ? 0.18 : offroad ? 0.32 : 0.58));
+      const yawDamping = input.handbrake
+        ? 0.16 + dynamics.handbrakeRearGrip * 0.12
+        : offroad
+          ? 0.2 + dynamics.offroadStability * 0.09
+          : 0.22 + dynamics.stabilityAssist * 0.13;
+      p.yawRate *= Math.max(0, 1 - dt * yawDamping);
       p.lateralSpeed = clamp(p.lateralSpeed, 20);
       p.yawRate = clamp(p.yawRate, 1.45);
 

@@ -100,6 +100,7 @@ function applyCustomization() {
   localStorage.setItem('mistline-car', JSON.stringify(customization));
   simulation.setCarModel(customization.model);
   view.setPlayerCustomization(customization);
+  if (!running) view.resetCamera();
   updateGarageUi();
 }
 
@@ -292,6 +293,7 @@ function returnToMainMenu() {
   setOnlineControls('solo');
   roomCodeInput.value = '';
   view.setRemotePlayers([]);
+  view.resetCamera();
   audio?.stop();
   updateHud();
   pause.classList.add('is-hidden');

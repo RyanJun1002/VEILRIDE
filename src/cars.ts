@@ -25,6 +25,23 @@ export type CarSpec = {
   grip: number;
   offroadGrip: number;
   steering: number;
+  dynamics: {
+    wheelbase: number;
+    frontWeight: number;
+    yawInertiaFactor: number;
+    frontCorneringStiffness: number;
+    rearCorneringStiffness: number;
+    steeringResponse: number;
+    lowSpeedSteer: number;
+    highSpeedSteer: number;
+    stabilityAssist: number;
+    offroadStability: number;
+    brakePower: number;
+    rollingResistance: number;
+    linearDrag: number;
+    aeroDrag: number;
+    handbrakeRearGrip: number;
+  };
 };
 
 export const CAR_SPECS: Record<CarModelId, CarSpec> = {
@@ -39,6 +56,13 @@ export const CAR_SPECS: Record<CarModelId, CarSpec> = {
     grip: 1.14,
     offroadGrip: 0.58,
     steering: 1,
+    dynamics: {
+      wheelbase: 2.7, frontWeight: 0.53, yawInertiaFactor: 0.24,
+      frontCorneringStiffness: 78000, rearCorneringStiffness: 108000,
+      steeringResponse: 3.2, lowSpeedSteer: 0.46, highSpeedSteer: 0.035,
+      stabilityAssist: 2.8, offroadStability: 0.6, brakePower: 13,
+      rollingResistance: 0.18, linearDrag: 0.004, aeroDrag: 0.00022, handbrakeRearGrip: 0.46,
+    },
   },
   'apex-r': {
     id: 'apex-r',
@@ -51,6 +75,13 @@ export const CAR_SPECS: Record<CarModelId, CarSpec> = {
     grip: 1.11,
     offroadGrip: 0.54,
     steering: 1.06,
+    dynamics: {
+      wheelbase: 2.62, frontWeight: 0.49, yawInertiaFactor: 0.21,
+      frontCorneringStiffness: 92000, rearCorneringStiffness: 118000,
+      steeringResponse: 4.1, lowSpeedSteer: 0.48, highSpeedSteer: 0.042,
+      stabilityAssist: 2.35, offroadStability: 0.52, brakePower: 15.5,
+      rollingResistance: 0.15, linearDrag: 0.0036, aeroDrag: 0.0002, handbrakeRearGrip: 0.4,
+    },
   },
   'ridge-x': {
     id: 'ridge-x',
@@ -63,6 +94,13 @@ export const CAR_SPECS: Record<CarModelId, CarSpec> = {
     grip: 1.2,
     offroadGrip: 0.82,
     steering: 1.02,
+    dynamics: {
+      wheelbase: 2.74, frontWeight: 0.55, yawInertiaFactor: 0.27,
+      frontCorneringStiffness: 76000, rearCorneringStiffness: 116000,
+      steeringResponse: 3.45, lowSpeedSteer: 0.47, highSpeedSteer: 0.034,
+      stabilityAssist: 3.25, offroadStability: 1.35, brakePower: 13.4,
+      rollingResistance: 0.22, linearDrag: 0.0048, aeroDrag: 0.00027, handbrakeRearGrip: 0.5,
+    },
   },
   'touring-s': {
     id: 'touring-s',
@@ -75,30 +113,51 @@ export const CAR_SPECS: Record<CarModelId, CarSpec> = {
     grip: 1.18,
     offroadGrip: 0.62,
     steering: 0.93,
+    dynamics: {
+      wheelbase: 2.98, frontWeight: 0.52, yawInertiaFactor: 0.27,
+      frontCorneringStiffness: 86000, rearCorneringStiffness: 128000,
+      steeringResponse: 2.7, lowSpeedSteer: 0.43, highSpeedSteer: 0.03,
+      stabilityAssist: 3.5, offroadStability: 0.72, brakePower: 13.8,
+      rollingResistance: 0.19, linearDrag: 0.0042, aeroDrag: 0.00023, handbrakeRearGrip: 0.52,
+    },
   },
   'trail-pickup': {
     id: 'trail-pickup',
     name: 'TRAIL 4X4',
     className: 'PICKUP',
-    acceleration: 7.3,
+    acceleration: 5.2,
     boostAcceleration: 13.2,
     maxSpeed: 65,
     mass: 2180,
     grip: 1.2,
     offroadGrip: 0.9,
     steering: 0.88,
+    dynamics: {
+      wheelbase: 3.42, frontWeight: 0.57, yawInertiaFactor: 0.3,
+      frontCorneringStiffness: 92000, rearCorneringStiffness: 148000,
+      steeringResponse: 2.35, lowSpeedSteer: 0.42, highSpeedSteer: 0.026,
+      stabilityAssist: 4.1, offroadStability: 1.55, brakePower: 12.2,
+      rollingResistance: 0.28, linearDrag: 0.006, aeroDrag: 0.00034, handbrakeRearGrip: 0.58,
+    },
   },
   'metro-bus': {
     id: 'metro-bus',
     name: 'METRO 09',
     className: 'CITY BUS',
-    acceleration: 4.8,
-    boostAcceleration: 8.4,
-    maxSpeed: 42,
+    acceleration: 2.25,
+    boostAcceleration: 4.1,
+    maxSpeed: 34,
     mass: 9200,
     grip: 1.26,
     offroadGrip: 0.42,
     steering: 0.66,
+    dynamics: {
+      wheelbase: 5.95, frontWeight: 0.46, yawInertiaFactor: 0.29,
+      frontCorneringStiffness: 205000, rearCorneringStiffness: 325000,
+      steeringResponse: 1.35, lowSpeedSteer: 0.38, highSpeedSteer: 0.016,
+      stabilityAssist: 6.4, offroadStability: 2.2, brakePower: 8.5,
+      rollingResistance: 0.48, linearDrag: 0.012, aeroDrag: 0.00058, handbrakeRearGrip: 0.82,
+    },
   },
   'storm-moto': {
     id: 'storm-moto',
@@ -111,6 +170,13 @@ export const CAR_SPECS: Record<CarModelId, CarSpec> = {
     grip: 1.08,
     offroadGrip: 0.4,
     steering: 1.22,
+    dynamics: {
+      wheelbase: 2.04, frontWeight: 0.48, yawInertiaFactor: 0.19,
+      frontCorneringStiffness: 28000, rearCorneringStiffness: 34000,
+      steeringResponse: 5.2, lowSpeedSteer: 0.55, highSpeedSteer: 0.05,
+      stabilityAssist: 1.65, offroadStability: 0.38, brakePower: 14.8,
+      rollingResistance: 0.11, linearDrag: 0.003, aeroDrag: 0.00018, handbrakeRearGrip: 0.68,
+    },
   },
 };
 
