@@ -619,7 +619,11 @@ function createBusCockpit() {
   windshield.position.set(0, 1.35, -0.47);
   const topRail = roundedBox(3.34, 0.065, 0.075, 0.025, dashMaterial);
   topRail.position.set(0, 2.13, -0.455);
-  cockpit.add(windshield, topRail);
+  const frontBulkhead = roundedBox(3.26, 0.63, 0.12, 0.045, dashMaterial);
+  frontBulkhead.position.set(0, 0.26, -0.43);
+  const windshieldSill = roundedBox(3.3, 0.085, 0.17, 0.03, dashTopMaterial);
+  windshieldSill.position.set(0, 0.59, -0.405);
+  cockpit.add(windshield, topRail, frontBulkhead, windshieldSill);
   for (const side of [-1, 1]) {
     const pillar = roundedBox(0.065, 1.58, 0.075, 0.022, dashMaterial);
     pillar.position.set(side * 1.65, 1.35, -0.455);
