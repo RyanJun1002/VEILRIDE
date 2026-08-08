@@ -1,4 +1,11 @@
-export type CarModelId = 'mist-gt' | 'apex-r' | 'ridge-x' | 'touring-s';
+export type CarModelId =
+  | 'mist-gt'
+  | 'apex-r'
+  | 'ridge-x'
+  | 'touring-s'
+  | 'trail-pickup'
+  | 'metro-bus'
+  | 'storm-moto';
 
 export type CarCustomization = {
   model: CarModelId;
@@ -68,6 +75,42 @@ export const CAR_SPECS: Record<CarModelId, CarSpec> = {
     grip: 1.18,
     offroadGrip: 0.62,
     steering: 0.93,
+  },
+  'trail-pickup': {
+    id: 'trail-pickup',
+    name: 'TRAIL 4X4',
+    className: 'PICKUP',
+    acceleration: 7.3,
+    boostAcceleration: 13.2,
+    maxSpeed: 65,
+    mass: 2180,
+    grip: 1.2,
+    offroadGrip: 0.9,
+    steering: 0.88,
+  },
+  'metro-bus': {
+    id: 'metro-bus',
+    name: 'METRO 09',
+    className: 'CITY BUS',
+    acceleration: 4.8,
+    boostAcceleration: 8.4,
+    maxSpeed: 42,
+    mass: 9200,
+    grip: 1.26,
+    offroadGrip: 0.42,
+    steering: 0.66,
+  },
+  'storm-moto': {
+    id: 'storm-moto',
+    name: 'STORM R',
+    className: 'MOTORCYCLE',
+    acceleration: 10,
+    boostAcceleration: 18.5,
+    maxSpeed: 90,
+    mass: 224,
+    grip: 1.08,
+    offroadGrip: 0.4,
+    steering: 1.22,
   },
 };
 

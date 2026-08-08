@@ -25,6 +25,31 @@ type LeavePacket = {
 type NetworkPacket = StatePacket | LeavePacket;
 
 const ROOM_PREFIX = 'mistline-';
+const PEER_OPTIONS = {
+  debug: 1 as const,
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      {
+        urls: 'turn:openrelay.metered.ca:80',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+      },
+      {
+        urls: 'turn:openrelay.metered.ca:443',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+      },
+      {
+        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+      },
+    ],
+    sdpSemantics: 'unified-plan' as const,
+  },
+};
 
 function cleanRoomCode(value: string) {
   return value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
@@ -84,7 +109,10 @@ export class MultiplayerSession {
     });
     this.registerConnection(connection);
     await new Promise<void>((resolve, reject) => {
-      const timeout = window.setTimeout(() => reject(new Error('방을 찾을 수 없습니다.')), 9000);
+      const timeout = window.setTimeout(() => {
+        connection.close();
+        reject(new Error('방을 찾을 수 없거나 네트워크 연결이 차단됐습니다.'));
+      }, 15000);
       connection.once('open', () => {
         clearTimeout(timeout);
         this.onStatus(`방 ${cleanCode} · 연결됨`, true);
@@ -129,19 +157,33 @@ export class MultiplayerSession {
 
   private openPeer(id?: string) {
     return new Promise<Peer>((resolve, reject) => {
-      const peer = id ? new Peer(id) : new Peer();
+      const peer = id ? new Peer(id, PEER_OPTIONS) : new Peer(PEER_OPTIONS);
       const timeout = window.setTimeout(() => {
         peer.destroy();
         reject(new Error('네트워크 연결 시간이 초과됐습니다.'));
       }, 10000);
-      peer.once('open', () => {
-        clearTimeout(timeout);
-        resolve(peer);
-      });
-      peer.once('error', error => {
+      const initialError = (error: { type: string }) => {
         clearTimeout(timeout);
         if (error.type === 'unavailable-id') reject(new Error('이미 사용 중인 방 코드입니다.'));
         else reject(new Error('멀티플레이 서버에 연결할 수 없습니다.'));
+      };
+      peer.once('error', initialError);
+      peer.once('open', () => {
+        clearTimeout(timeout);
+        peer.off('error', initialError);
+        peer.on('error', error => {
+          if (error.type === 'peer-unavailable') this.onStatus('방을 찾을 수 없습니다.', false);
+          else if (error.type === 'network') this.onStatus('네트워크 연결이 끊겼습니다. 재연결 중...', false);
+          else this.onStatus('멀티플레이 연결 오류', false);
+        });
+        peer.on('disconnected', () => {
+          if (peer.destroyed) return;
+          this.onStatus('서버 재연결 중...', false);
+          window.setTimeout(() => {
+            if (!peer.destroyed && peer.disconnected) peer.reconnect();
+          }, 900);
+        });
+        resolve(peer);
       });
     });
   }
@@ -151,6 +193,16 @@ export class MultiplayerSession {
     connection.on('open', () => {
       if (this.host) this.onStatus(`방 ${this.roomCode} · 플레이어 연결됨`, true);
       this.updatePlayerCount();
+      const peerConnection = connection.peerConnection;
+      peerConnection?.addEventListener('iceconnectionstatechange', () => {
+        if (peerConnection.iceConnectionState === 'failed') {
+          this.onStatus('P2P 연결 실패 · 방을 다시 만들어 보세요.', false);
+        } else if (peerConnection.iceConnectionState === 'disconnected') {
+          this.onStatus('상대 연결 복구 중...', false);
+        } else if (peerConnection.iceConnectionState === 'connected' || peerConnection.iceConnectionState === 'completed') {
+          this.onStatus(`방 ${this.roomCode} · 연결됨`, true);
+        }
+      });
     });
     connection.on('data', data => this.handlePacket(data as NetworkPacket, connection));
     connection.on('close', () => {
