@@ -1729,8 +1729,15 @@ export class GameRenderer {
     this.playerCar.position.set(player.x, 0.04 + playerRideHeight, player.z);
     this.playerCar.rotation.y = -player.heading;
     const playerAppearance = this.playerCar.userData.appearance as CarCustomization;
+    const motorcycleLean = THREE.MathUtils.clamp(
+      -player.steerAngle
+        * Math.min(Math.abs(player.forwardSpeed) / 24, 1)
+        * (this.cameraMode === 1 ? 0.035 : 0.12),
+      this.cameraMode === 1 ? -0.035 : -0.12,
+      this.cameraMode === 1 ? 0.035 : 0.12,
+    );
     this.playerCar.rotation.z = playerAppearance.model === 'storm-moto'
-      ? -player.wheelAngle * Math.min(Math.abs(player.forwardSpeed) / 12, 1) * 0.72
+      ? motorcycleLean
       : 0;
     const wheels = this.playerCar.userData.wheels as THREE.Group[];
     const playerWheelRadius = (this.playerCar.userData.wheelRadius as number | undefined) ?? 0.39;
@@ -1744,7 +1751,9 @@ export class GameRenderer {
     for (const object of firstPersonHidden) object.visible = !firstPerson;
     if (cockpit.visible) {
       const steeringWheel = cockpit.userData.steeringWheel as THREE.Group;
-      steeringWheel.rotation.z = -player.wheelAngle * 2.45;
+      steeringWheel.rotation.z = playerAppearance.model === 'storm-moto'
+        ? -player.wheelAngle * 0.6
+        : -player.wheelAngle * 2.45;
       const kmh = Math.round(Math.abs(player.forwardSpeed) * 3.6);
       const rpm = Math.round(Math.min(8000, 900 + Math.abs(player.forwardSpeed) * 105));
       const gear = player.forwardSpeed < -0.5 ? 'R' : player.forwardSpeed < 1 ? 'N' : 'D';
@@ -1777,7 +1786,11 @@ export class GameRenderer {
       car.rotation.y += rotationDelta * remoteEase;
       const remoteAppearance = car.userData.appearance as CarCustomization;
       car.rotation.z = remoteAppearance.model === 'storm-moto'
-        ? -target.wheelAngle * Math.min(Math.abs(target.forwardSpeed) / 12, 1) * 0.72
+        ? THREE.MathUtils.clamp(
+          -target.wheelAngle * Math.min(Math.abs(target.forwardSpeed) / 24, 1) * 0.42,
+          -0.12,
+          0.12,
+        )
         : 0;
       const remoteWheels = car.userData.wheels as THREE.Group[];
       const remoteWheelRadius = (car.userData.wheelRadius as number | undefined) ?? 0.39;
