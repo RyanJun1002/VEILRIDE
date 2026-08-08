@@ -236,6 +236,10 @@ class EngineAudio {
     this.gain.gain.setTargetAtTime(0.035, this.context.currentTime, 0.3);
   }
 
+  stop() {
+    this.gain.gain.setTargetAtTime(0.0001, this.context.currentTime, 0.12);
+  }
+
   update(speed: number, throttle: number) {
     const rpm = 52 + Math.abs(speed) * 4.3 + throttle * 32;
     this.oscillator.frequency.setTargetAtTime(rpm, this.context.currentTime, 0.045);
@@ -278,6 +282,25 @@ function setPause(value: boolean) {
   touch.clear();
 }
 
+function returnToMainMenu() {
+  running = false;
+  paused = false;
+  keys.clear();
+  touch.clear();
+  simulation.restart();
+  multiplayer.disconnect();
+  setOnlineControls('solo');
+  roomCodeInput.value = '';
+  view.setRemotePlayers([]);
+  audio?.stop();
+  updateHud();
+  pause.classList.add('is-hidden');
+  hud.classList.add('is-hidden');
+  hud.classList.remove('is-dimmed');
+  hint.classList.remove('is-gone');
+  menu.classList.remove('is-gone');
+}
+
 function flashToast(message: string) {
   toast.textContent = message;
   toast.classList.remove('show');
@@ -293,6 +316,7 @@ document.querySelector('#restartButton')!.addEventListener('click', () => {
   setPause(false);
   flashToast('새로운 여정을 시작합니다');
 });
+document.querySelector('#mainMenuButton')!.addEventListener('click', returnToMainMenu);
 
 addEventListener('keydown', (event) => {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(event.code)) event.preventDefault();

@@ -101,6 +101,8 @@ kbd { min-width: 30px; padding: 5px 7px; border: 1px solid rgba(255,255,255,.2);
 .pause h2 { font: 600 clamp(32px,5vw,58px)/1 'Barlow Condensed'; margin: 8px 0 28px; }
 .pause button { width: 180px; height: 44px; border: 0; background: var(--orange); cursor: pointer; font-size: 11px; font-weight: 600; letter-spacing: .08em; }
 .pause button.secondary { margin-top: 8px; background: transparent; border: 1px solid rgba(255,255,255,.18); color: rgba(255,255,255,.65); }
+.pause button.main-menu-button { border-color: rgba(242,93,59,.4); color: var(--cream); }
+.pause button.main-menu-button:hover { background: rgba(242,93,59,.12); border-color: var(--orange); }
 .toast { position: fixed; z-index: 30; left: 50%; top: 75px; transform: translate(-50%, -8px); opacity: 0; padding: 8px 12px; background: rgba(10,16,14,.7); border-left: 2px solid var(--orange); font-size: 9px; letter-spacing: .08em; pointer-events: none; transition: .25s; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .touch-controls { display: none; }
