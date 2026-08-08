@@ -60,14 +60,11 @@ const PEER_OPTIONS = {
 };
 
 function cleanRoomCode(value: string) {
-  return value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+  return value.replace(/\D/g, '').slice(0, 6);
 }
 
 function makeRoomCode() {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) code += alphabet[Math.floor(Math.random() * alphabet.length)];
-  return code;
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 export class MultiplayerSession {
@@ -105,7 +102,7 @@ export class MultiplayerSession {
 
   async joinRoom(code: string) {
     const cleanCode = cleanRoomCode(code);
-    if (cleanCode.length < 4) throw new Error('방 코드를 입력하세요.');
+    if (cleanCode.length !== 6) throw new Error('6자리 방 코드를 입력하세요.');
     this.disconnect();
     this.host = false;
     this.roomCode = cleanCode;

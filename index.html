@@ -51,11 +51,11 @@
               <button id="hostButton">방 만들기</button>
             </div>
             <div class="join-row">
-              <input id="roomCodeInput" maxlength="6" autocomplete="off" placeholder="ROOM CODE" aria-label="방 코드" />
+              <input id="roomCodeInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="6자리 숫자" aria-label="6자리 방 코드" />
               <button id="joinButton">참가</button>
             </div>
             <button id="roomCodeDisplay" class="room-code is-hidden" title="클릭해서 복사"></button>
-            <p>방 코드를 친구에게 보내세요. 연결되면 양쪽에 <b>2 PLAYERS</b>가 표시됩니다.</p>
+            <p>6자리 숫자를 친구에게 보내세요. 연결되면 양쪽에 <b>2 PLAYERS</b>가 표시됩니다.</p>
           </section>
         </div>
         <button id="startButton" class="start-button">

@@ -212,6 +212,14 @@ roomCodeDisplay.addEventListener('click', async () => {
 roomCodeInput.addEventListener('input', () => {
   roomCodeInput.value = cleanRoomCode(roomCodeInput.value);
 });
+roomCodeInput.addEventListener('keydown', event => {
+  event.stopPropagation();
+  if (event.key === 'Enter' && !event.repeat) {
+    event.preventDefault();
+    joinButton.click();
+  }
+});
+roomCodeInput.addEventListener('keyup', event => event.stopPropagation());
 
 addEventListener('beforeunload', () => multiplayer.disconnect());
 
@@ -326,6 +334,7 @@ document.querySelector('#restartButton')!.addEventListener('click', () => {
 document.querySelector('#mainMenuButton')!.addEventListener('click', returnToMainMenu);
 
 addEventListener('keydown', (event) => {
+  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(event.code)) event.preventDefault();
   if (event.code === 'Escape') setPause(!paused);
   if (event.code === 'KeyC' && !event.repeat) {
@@ -344,7 +353,10 @@ addEventListener('keydown', (event) => {
   }
   keys.add(event.code);
 });
-addEventListener('keyup', event => keys.delete(event.code));
+addEventListener('keyup', event => {
+  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+  keys.delete(event.code);
+});
 addEventListener('blur', () => { if (running && !paused) setPause(true); });
 
 document.querySelectorAll<HTMLButtonElement>('[data-touch]').forEach(button => {
