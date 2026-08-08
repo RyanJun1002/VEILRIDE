@@ -11,9 +11,10 @@ const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).device
 const cpuCores = navigator.hardwareConcurrency ?? 8;
 const mobileDevice = matchMedia('(pointer: coarse)').matches || innerWidth <= 820;
 const LOW_POWER_MODE = mobileDevice || deviceMemory <= 4 || cpuCores <= 4;
-const CHUNK_COUNT = LOW_POWER_MODE ? 6 : 13;
-const TRAFFIC_RENDER_LIMIT = LOW_POWER_MODE ? 5 : Number.POSITIVE_INFINITY;
-const LOW_RENDER_SCALE = 0.82;
+const VERY_LOW_END = deviceMemory <= 3 || cpuCores <= 2;
+const CHUNK_COUNT = LOW_POWER_MODE ? (VERY_LOW_END ? 6 : 8) : 13;
+const TRAFFIC_RENDER_LIMIT = LOW_POWER_MODE ? (VERY_LOW_END ? 7 : 10) : Number.POSITIVE_INFINITY;
+const LOW_RENDER_SCALE = VERY_LOW_END ? 0.84 : 0.96;
 
 function worldMaterial(parameters: THREE.MeshStandardMaterialParameters) {
   if (!LOW_POWER_MODE) return new THREE.MeshStandardMaterial(parameters);
@@ -1316,7 +1317,7 @@ export function createCar(color: number, player = false, customization?: CarCust
 }
 
 function makeRoadGeometry(startZ: number) {
-  const segments = LOW_POWER_MODE ? 16 : 38;
+  const segments = LOW_POWER_MODE ? 22 : 38;
   const positions: number[] = [];
   const uvs: number[] = [];
   const indices: number[] = [];
@@ -1346,7 +1347,7 @@ function makeRoadGeometry(startZ: number) {
 function makeMarkingGeometry(startZ: number, offset: number, width = 0.11, dash = false) {
   const positions: number[] = [];
   const indices: number[] = [];
-  const count = LOW_POWER_MODE ? (dash ? 8 : 24) : (dash ? 18 : 55);
+  const count = LOW_POWER_MODE ? (dash ? 12 : 32) : (dash ? 18 : 55);
   for (let i = 0; i < count; i++) {
     if (dash && i % 2) continue;
     const z1 = startZ - (i / count) * CHUNK_LENGTH;
@@ -1470,7 +1471,7 @@ export class GameRenderer {
 
   constructor(canvas: HTMLCanvasElement) {
     this.playerCar = createCar(DEFAULT_CUSTOMIZATION.color, true, DEFAULT_CUSTOMIZATION);
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !LOW_POWER_MODE, powerPreference: 'high-performance' });
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !VERY_LOW_END, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(LOW_POWER_MODE ? 1 : Math.min(devicePixelRatio, 1.5));
     this.renderer.shadowMap.enabled = !LOW_POWER_MODE;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -1531,7 +1532,7 @@ export class GameRenderer {
     for (const state of traffic.slice(0, TRAFFIC_RENDER_LIMIT)) {
       if (!this.trafficCars.has(state.id)) {
         const car = LOW_POWER_MODE ? createLightweightTrafficCar(state.color) : createCar(state.color);
-        car.scale.setScalar(0.92 + (state.id % 3) * 0.05);
+        car.scale.setScalar(LOW_POWER_MODE ? 1.28 + (state.id % 3) * 0.05 : 0.92 + (state.id % 3) * 0.05);
         this.scene.add(car);
         this.trafficCars.set(state.id, car);
       }
@@ -1667,7 +1668,7 @@ export class GameRenderer {
     chunk.group.add(makeMarkingGeometry(startZ, 3.75, 0.1));
 
     // Roadside reflector posts replace the old flat shoulder blocks.
-    const postCount = LOW_POWER_MODE ? 14 : 36;
+    const postCount = LOW_POWER_MODE ? 20 : 36;
     const posts = new THREE.InstancedMesh(
       new THREE.BoxGeometry(0.13, 0.9, 0.13),
       worldMaterial({ color: season.shoulder, roughness: 0.72 }),
@@ -1703,7 +1704,7 @@ export class GameRenderer {
 
     const trees: Array<{ x: number; z: number; scale: number; rotation: number; color: number }> = [];
     const rocks: Array<{ x: number; z: number; scale: number; rotation: number }> = [];
-    for (let i = 0; i < (LOW_POWER_MODE ? 16 : 40); i++) {
+    for (let i = 0; i < (LOW_POWER_MODE ? 22 : 40); i++) {
       const z = startZ - rng() * CHUNK_LENGTH;
       const side = rng() < 0.5 ? -1 : 1;
       const dist = 9 + rng() * 72;
@@ -1778,7 +1779,7 @@ export class GameRenderer {
     rockClusters.receiveShadow = true;
     chunk.group.add(rockClusters);
 
-    const shrubCount = LOW_POWER_MODE ? 4 : 18;
+    const shrubCount = LOW_POWER_MODE ? 8 : 18;
     const shrubs = new THREE.InstancedMesh(
       new THREE.IcosahedronGeometry(0.55, LOW_POWER_MODE ? 0 : 1),
       worldMaterial({ color: season.leaves[1], roughness: 1, flatShading: true }),
@@ -1799,8 +1800,7 @@ export class GameRenderer {
     shrubs.receiveShadow = true;
     chunk.group.add(shrubs);
 
-    const mountainSides = LOW_POWER_MODE ? [index % 2 === 0 ? -1 : 1] : [-1, 1];
-    for (const side of mountainSides) {
+    for (const side of [-1, 1]) {
       for (let peak = 0; peak < (LOW_POWER_MODE ? 1 : 2); peak++) {
         const mountain = new THREE.Mesh(
           makeMountainGeometry(index * 283 + side * 31 + peak * 719),

@@ -287,20 +287,28 @@ function start() {
   setTimeout(() => hint.classList.add('is-gone'), 6500);
 }
 
+function clearTouchInput() {
+  touch.clear();
+  document.querySelectorAll<HTMLButtonElement>('[data-touch]').forEach(button => {
+    button.classList.remove('is-active', 'is-latched');
+    if (button.dataset.touch === 'boost') button.querySelector('small')!.textContent = 'BOOST';
+  });
+}
+
 function setPause(value: boolean) {
   if (!running) return;
   paused = value;
   pause.classList.toggle('is-hidden', !paused);
   hud.classList.toggle('is-dimmed', paused);
   keys.clear();
-  touch.clear();
+  clearTouchInput();
 }
 
 function returnToMainMenu() {
   running = false;
   paused = false;
   keys.clear();
-  touch.clear();
+  clearTouchInput();
   simulation.restart();
   multiplayer.disconnect();
   setOnlineControls('solo');
@@ -363,11 +371,20 @@ document.querySelectorAll<HTMLButtonElement>('[data-touch]').forEach(button => {
   const action = button.dataset.touch!;
   const down = (event: PointerEvent) => {
     event.preventDefault();
+    if (action === 'boost') {
+      const enabled = !touch.has(action);
+      if (enabled) touch.add(action);
+      else touch.delete(action);
+      button.classList.toggle('is-latched', enabled);
+      button.querySelector('small')!.textContent = enabled ? 'BOOST ON' : 'BOOST';
+      return;
+    }
     button.setPointerCapture(event.pointerId);
     touch.add(action);
     button.classList.add('is-active');
   };
   const up = () => {
+    if (action === 'boost') return;
     touch.delete(action);
     button.classList.remove('is-active');
   };

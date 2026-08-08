@@ -49,10 +49,10 @@ export class DrivingSimulation {
   constructor() {
     const colors = [0xe8e2d8, 0x19282c, 0xc64b36, 0xd9a441, 0x526d78, 0x6c4a63];
     for (let i = 0; i < 13; i++) {
-      const direction = i % 4 === 0 ? -1 : 1;
+      const direction = i % 3 === 2 ? -1 : 1;
       this.traffic.push({
         id: i,
-        z: -130 - i * 92 - Math.random() * 70,
+        z: -30 - i * 65 - Math.random() * 18,
         lane: direction === 1 ? -2 : 2,
         speed: direction === 1 ? 17 + Math.random() * 11 : 23 + Math.random() * 8,
         direction,
@@ -95,7 +95,7 @@ export class DrivingSimulation {
   restart() {
     this.player = this.freshPlayer();
     this.traffic.forEach((car, i) => {
-      car.z = -150 - i * 105;
+      car.z = -60 - i * 70;
       car.passed = false;
     });
   }
