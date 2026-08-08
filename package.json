@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc && vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "export:models": "vite build --ssr tools/export-models.mjs --outDir .model-export-build --emptyOutDir && node .model-export-build/export-models.js"
   },
   "dependencies": {
     "peerjs": "^1.5.5",

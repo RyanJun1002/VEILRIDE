@@ -1,5 +1,7 @@
 node_modules/
 dist/
+.model-export-build/
+exports/
 .env
 .env.*
 *.log
