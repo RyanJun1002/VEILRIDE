@@ -545,10 +545,12 @@ function createBusCockpit() {
   const dashMaterial = new THREE.MeshStandardMaterial({ color: 0x26302e, roughness: 0.84, metalness: 0.06 });
   const dashTopMaterial = new THREE.MeshStandardMaterial({ color: 0x38423f, roughness: 0.72, metalness: 0.12 });
   const trimMaterial = new THREE.MeshStandardMaterial({ color: 0x687470, roughness: 0.38, metalness: 0.56 });
+  const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x111716, roughness: 0.96, metalness: 0.02 });
+  const headlinerMaterial = new THREE.MeshStandardMaterial({ color: 0x4d5753, roughness: 0.94, metalness: 0.02 });
   const wheelMaterial = new THREE.MeshPhysicalMaterial({ color: 0x18201e, roughness: 0.58, clearcoat: 0.28 });
   const accentMaterial = new THREE.MeshStandardMaterial({ color: 0xf05d3b, emissive: 0x7b1f0d, emissiveIntensity: 0.55 });
   const glassMaterial = new THREE.MeshPhysicalMaterial({ color: 0xa5cecd, transparent: true, opacity: 0.045, roughness: 0.025, side: THREE.DoubleSide, depthWrite: false });
-  const sideGlassMaterial = new THREE.MeshPhysicalMaterial({ color: 0x789b98, transparent: true, opacity: 0.1, roughness: 0.04, side: THREE.DoubleSide, depthWrite: false });
+  const sideGlassMaterial = new THREE.MeshPhysicalMaterial({ color: 0x294a47, transparent: true, opacity: 0.42, roughness: 0.13, side: THREE.DoubleSide, depthWrite: false });
 
   // Bus interiors need their own driver-scale layout. The previous cockpit used
   // a deep block below a distant cluster, which filled half of first-person view.
@@ -605,8 +607,8 @@ function createBusCockpit() {
   ticketConsole.position.set(0.75, 0.22, 0.02);
   cockpit.add(buttonPanel, ticketConsole);
 
-  const floor = roundedBox(2.32, 0.1, 2.8, 0.06, dashMaterial);
-  floor.position.set(0, -0.24, 0.32);
+  const floor = roundedBox(3.28, 0.12, 3.25, 0.06, floorMaterial);
+  floor.position.set(0, -0.25, 0.42);
   const driverPedestal = roundedBox(0.68, 0.18, 0.72, 0.08, dashTopMaterial);
   driverPedestal.position.set(-0.56, -0.13, 0.78);
   const aisleTrim = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.025, 2.25), trimMaterial);
@@ -619,11 +621,15 @@ function createBusCockpit() {
   windshield.position.set(0, 1.35, -0.47);
   const topRail = roundedBox(3.34, 0.065, 0.075, 0.025, dashMaterial);
   topRail.position.set(0, 2.13, -0.455);
+  const roofShell = roundedBox(3.32, 0.12, 3.25, 0.055, dashMaterial);
+  roofShell.position.set(0, 2.16, 0.58);
+  const ceilingLiner = roundedBox(2.98, 0.035, 2.8, 0.03, headlinerMaterial);
+  ceilingLiner.position.set(0, 2.085, 0.62);
   const frontBulkhead = roundedBox(3.26, 0.63, 0.12, 0.045, dashMaterial);
   frontBulkhead.position.set(0, 0.26, -0.43);
   const windshieldSill = roundedBox(3.3, 0.085, 0.17, 0.03, dashTopMaterial);
   windshieldSill.position.set(0, 0.59, -0.405);
-  cockpit.add(windshield, topRail, frontBulkhead, windshieldSill);
+  cockpit.add(windshield, topRail, roofShell, ceilingLiner, frontBulkhead, windshieldSill);
   for (const side of [-1, 1]) {
     const pillar = roundedBox(0.065, 1.58, 0.075, 0.022, dashMaterial);
     pillar.position.set(side * 1.65, 1.35, -0.455);
@@ -639,13 +645,15 @@ function createBusCockpit() {
     sideRoofRail.position.set(side * 1.64, 2.02, 0.45);
     const sideBeltRail = roundedBox(0.09, 0.075, 1.9, 0.025, dashTopMaterial);
     sideBeltRail.position.set(side * 1.64, 0.72, 0.45);
+    const windowDivider = roundedBox(0.075, 1.22, 0.075, 0.022, dashMaterial);
+    windowDivider.position.set(side * 1.64, 1.35, 0.45);
     const rearPillar = roundedBox(0.085, 1.38, 0.095, 0.025, dashMaterial);
     rearPillar.position.set(side * 1.64, 1.35, 1.36);
     const doorPanel = roundedBox(0.12, 0.72, 1.82, 0.05, dashMaterial);
     doorPanel.position.set(side * 1.64, 0.32, 0.45);
     const doorInset = roundedBox(0.018, 0.36, 0.72, 0.035, dashTopMaterial);
     doorInset.position.set(side * 1.57, 0.34, 0.48);
-    cockpit.add(sideWindow, sideRoofRail, sideBeltRail, rearPillar, doorPanel, doorInset);
+    cockpit.add(sideWindow, sideRoofRail, sideBeltRail, windowDivider, rearPillar, doorPanel, doorInset);
   }
 
   const mirror = roundedBox(0.38, 0.12, 0.045, 0.025, trimMaterial);
