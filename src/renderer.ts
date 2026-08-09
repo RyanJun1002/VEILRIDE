@@ -1703,6 +1703,59 @@ type RemoteCarRender = {
   appearanceKey: string;
 };
 
+function createStarField() {
+  const rng = mulberry32(90731);
+  const positions: number[] = [];
+  const count = LOW_POWER_MODE ? 110 : 260;
+  for (let i = 0; i < count; i++) {
+    const angle = rng() * Math.PI * 2;
+    const radius = 330 + rng() * 470;
+    positions.push(
+      Math.cos(angle) * radius,
+      95 + Math.pow(rng(), 0.58) * 390,
+      Math.sin(angle) * radius,
+    );
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  const material = new THREE.PointsMaterial({
+    color: 0xeaf2ff,
+    size: LOW_POWER_MODE ? 1.45 : 1.7,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 0.9,
+    depthWrite: false,
+    fog: false,
+  });
+  const stars = new THREE.Points(geometry, material);
+  stars.frustumCulled = false;
+  return stars;
+}
+
+function createMoonGlow() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const context = canvas.getContext('2d')!;
+  const glow = context.createRadialGradient(64, 64, 15, 64, 64, 62);
+  glow.addColorStop(0, 'rgba(213, 228, 255, 0.68)');
+  glow.addColorStop(0.32, 'rgba(176, 205, 255, 0.28)');
+  glow.addColorStop(1, 'rgba(135, 173, 235, 0)');
+  context.fillStyle = glow;
+  context.fillRect(0, 0, 128, 128);
+  const texture = new THREE.CanvasTexture(canvas);
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    opacity: 0.62,
+    depthWrite: false,
+    fog: false,
+  });
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.set(43, 43, 1);
+  return sprite;
+}
+
 export class GameRenderer {
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(57, 1, 0.1, 1100);
@@ -1718,8 +1771,12 @@ export class GameRenderer {
   private cameraPosition = new THREE.Vector3();
   private cameraTarget = new THREE.Vector3();
   private sun: THREE.Mesh;
+  private moonGlow: THREE.Sprite;
+  private stars: THREE.Points;
   private hemiLight: THREE.HemisphereLight;
   private keyLight: THREE.DirectionalLight;
+  private readonly headLights: THREE.SpotLight[] = [];
+  private readonly headLightTargets: THREE.Object3D[] = [];
   private timeIndex = 1;
   private seasonIndex = 1;
   private worldMap: WorldMapId = 'mountain';
@@ -1729,7 +1786,7 @@ export class GameRenderer {
     { name: '새벽', sky: 0x74889a, fog: 0x8798a0, density: 0.0052, hemiSky: 0x9cb8c9, hemiGround: 0x343c43, hemi: 1.35, key: 0xffb37f, keyPower: 3.1, exposure: 0.88, sun: 0xffbd86, sunOffset: [-115, 28, -340] },
     { name: '낮', sky: 0x9db4a5, fog: 0x9eb1a4, density: 0.0047, hemiSky: 0xc8e1d4, hemiGround: 0x46513d, hemi: 2.1, key: 0xffd5a0, keyPower: 4.6, exposure: 1.08, sun: 0xffe1ac, sunOffset: [-145, 85, -360] },
     { name: '노을', sky: 0xc47b5e, fog: 0xa87966, density: 0.0054, hemiSky: 0xe3a179, hemiGround: 0x493c3d, hemi: 1.45, key: 0xff7b45, keyPower: 4.1, exposure: 0.94, sun: 0xff8a4c, sunOffset: [125, 24, -330] },
-    { name: '밤', sky: 0x101b2b, fog: 0x172437, density: 0.0062, hemiSky: 0x496587, hemiGround: 0x101820, hemi: 0.72, key: 0x9ebdff, keyPower: 1.15, exposure: 0.62, sun: 0xcfe0ff, sunOffset: [-110, 62, -360] },
+    { name: '밤', sky: 0x17263d, fog: 0x22354a, density: 0.0057, hemiSky: 0x6e89aa, hemiGround: 0x202d3a, hemi: 1.02, key: 0xb9ceff, keyPower: 1.56, exposure: 0.82, sun: 0xe3ecff, sunOffset: [-110, 62, -360] },
   ];
   private readonly seasonSettings = [
     { name: '봄', ground: [0x6b8058, 0x72885e], shoulder: 0xa99d7d, leaves: [0x416a43, 0x568052, 0x78965e], hills: [0x60765c, 0x526950], rock: 0x77786d },
@@ -1769,6 +1826,27 @@ export class GameRenderer {
     const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffe1ac, fog: false });
     this.sun = new THREE.Mesh(new THREE.CircleGeometry(11, LOW_POWER_MODE ? 20 : 40), sunMaterial);
     this.scene.add(this.sun);
+    this.moonGlow = createMoonGlow();
+    this.scene.add(this.moonGlow);
+    this.stars = createStarField();
+    this.scene.add(this.stars);
+    const headLightCount = LOW_POWER_MODE ? 1 : 2;
+    for (let i = 0; i < headLightCount; i++) {
+      const light = new THREE.SpotLight(
+        0xfff0cf,
+        LOW_POWER_MODE ? 78 : 54,
+        LOW_POWER_MODE ? 66 : 78,
+        THREE.MathUtils.degToRad(LOW_POWER_MODE ? 29 : 23),
+        0.72,
+        1.28,
+      );
+      light.castShadow = false;
+      const target = new THREE.Object3D();
+      light.target = target;
+      this.scene.add(light, target);
+      this.headLights.push(light);
+      this.headLightTargets.push(target);
+    }
     this.applyTimeSetting();
 
     this.scene.add(this.playerCar);
@@ -1983,6 +2061,10 @@ export class GameRenderer {
     this.renderer.toneMappingExposure = setting.exposure;
     (this.sun.material as THREE.MeshBasicMaterial).color.setHex(setting.sun);
     this.sun.scale.setScalar(this.timeIndex === 3 ? 0.62 : 1);
+    const night = this.timeIndex === 3;
+    this.moonGlow.visible = night;
+    this.stars.visible = night;
+    for (const light of this.headLights) light.visible = night;
   }
 
   private rebuildChunk(chunk: WorldChunk, index: number) {
@@ -2468,6 +2550,24 @@ export class GameRenderer {
 
     const forward = new THREE.Vector3(Math.sin(player.heading), 0, -Math.cos(player.heading));
     const right = new THREE.Vector3(Math.cos(player.heading), 0, Math.sin(player.heading));
+    const headLightFront = playerAppearance.model === 'metro-bus'
+      ? 5.15
+      : playerAppearance.model === 'trail-pickup'
+        ? 2.78
+        : playerAppearance.model === 'storm-moto'
+          ? 1.08
+          : 2.18;
+    for (let i = 0; i < this.headLights.length; i++) {
+      const lateral = this.headLights.length === 1 ? 0 : (i === 0 ? -0.66 : 0.66);
+      const lightPosition = new THREE.Vector3(player.x, 0.78 + playerRideHeight, player.z)
+        .add(forward.clone().multiplyScalar(headLightFront))
+        .add(right.clone().multiplyScalar(lateral));
+      const targetPosition = new THREE.Vector3(player.x, 0.04, player.z)
+        .add(forward.clone().multiplyScalar(48))
+        .add(right.clone().multiplyScalar(lateral * 0.35));
+      this.headLights[i].position.copy(lightPosition);
+      this.headLightTargets[i].position.copy(targetPosition);
+    }
     const cameraProfile = this.playerCar.userData.cameraProfile as CameraProfile;
     let desired: THREE.Vector3;
     let lookAhead: THREE.Vector3;
@@ -2510,6 +2610,8 @@ export class GameRenderer {
     const sunOffset = this.timeSettings[this.timeIndex].sunOffset;
     this.sun.position.set(player.x + sunOffset[0], sunOffset[1], player.z + sunOffset[2]);
     this.sun.lookAt(this.camera.position);
+    this.moonGlow.position.copy(this.sun.position);
+    this.stars.position.set(player.x, 0, player.z);
   }
 
   render() {
