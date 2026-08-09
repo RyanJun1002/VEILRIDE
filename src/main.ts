@@ -520,9 +520,9 @@ type EngineSoundProfile = {
 
 const ENGINE_SOUNDS: Record<CarModelId, EngineSoundProfile> = {
   'mist-gt': {
-    ratios: [1, 0.5, 1.42], detunes: [-5, 6, 2], voices: [0.48, 0.36, 0.12], harmonicRolloff: 1.9, toneCut: -5.5,
+    ratios: [0.72, 0.36, 1], detunes: [-5, 6, 0], voices: [0.54, 0.34, 0], harmonicRolloff: 3, toneCut: -15,
     idleRpm: 780, redlineRpm: 6800, cylinders: 6, shiftKmh: [38, 70, 108, 152, 205, 260],
-    filterBase: 320, filterRpm: 0.13, resonance: 2.2, bodyFrequency: 92, bodyGain: 5.5, intake: 0.38, roughness: 0.16, overrun: 0.18, volume: 0.031,
+    filterBase: 300, filterRpm: 0.08, resonance: 1.4, bodyFrequency: 82, bodyGain: 7.2, intake: 0.06, roughness: 0.16, overrun: 0.16, volume: 0.032,
   },
   'apex-r': {
     ratios: [0.56, 0.28, 1], detunes: [-3, 4, 0], voices: [0.56, 0.34, 0], harmonicRolloff: 3.1, toneCut: -16,
