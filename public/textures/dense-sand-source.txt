@@ -1,0 +1,12 @@
+Dense Sand by Dimitrios Savva / Poly Haven
+Source: https://polyhaven.com/a/dense_sand
+License: CC0 1.0 Universal
+Physical source width: 1.8 m
+
+Runtime derivatives generated with tools/prepare_dense_sand.py:
+- dense-sand-diffuse-2k.webp
+- dense-sand-normal-1k.webp (OpenGL normal map)
+- dense-sand-roughness-1k.webp
+
+The source displacement map is intentionally omitted from the browser build to
+keep terrain chunk edges flat and reduce download and GPU costs.

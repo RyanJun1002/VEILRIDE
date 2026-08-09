@@ -54,6 +54,9 @@ function worldMaterial(parameters: THREE.MeshStandardMaterialParameters) {
   if (!LOW_POWER_MODE) return new THREE.MeshStandardMaterial(parameters);
   return new THREE.MeshLambertMaterial({
     color: parameters.color,
+    map: parameters.map,
+    normalMap: parameters.normalMap,
+    normalScale: parameters.normalScale,
     emissive: parameters.emissive,
     emissiveIntensity: parameters.emissiveIntensity,
     flatShading: parameters.flatShading,
@@ -1685,6 +1688,11 @@ function makeMountainGeometry(seed: number) {
 }
 
 type WorldChunk = { index: number; group: THREE.Group };
+type SandTextures = {
+  diffuse: THREE.Texture;
+  normal?: THREE.Texture;
+  roughness?: THREE.Texture;
+};
 type RemoteCarRender = {
   car: THREE.Group;
   target: NetworkPlayerState;
@@ -1711,6 +1719,7 @@ export class GameRenderer {
   private timeIndex = 1;
   private seasonIndex = 1;
   private worldMap: WorldMapId = 'mountain';
+  private sandTextures: SandTextures;
   private readonly timeSettings = [
     { name: '새벽', sky: 0x74889a, fog: 0x8798a0, density: 0.0052, hemiSky: 0x9cb8c9, hemiGround: 0x343c43, hemi: 1.35, key: 0xffb37f, keyPower: 3.1, exposure: 0.88, sun: 0xffbd86, sunOffset: [-115, 28, -340] },
     { name: '낮', sky: 0x9db4a5, fog: 0x9eb1a4, density: 0.0047, hemiSky: 0xc8e1d4, hemiGround: 0x46513d, hemi: 2.1, key: 0xffd5a0, keyPower: 4.6, exposure: 1.08, sun: 0xffe1ac, sunOffset: [-145, 85, -360] },
@@ -1733,6 +1742,7 @@ export class GameRenderer {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.08;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.sandTextures = this.loadSandTextures();
 
     this.scene.background = new THREE.Color(0x9db4a5);
     this.scene.fog = new THREE.FogExp2(0x9eb1a4, 0.0047);
@@ -1768,6 +1778,26 @@ export class GameRenderer {
     if (!LOW_POWER_MODE) void this.initPostProcessing();
     this.resize();
     addEventListener('resize', () => this.resize());
+  }
+
+  private loadSandTextures(): SandTextures {
+    const loader = new THREE.TextureLoader();
+    const anisotropy = Math.min(LOW_POWER_MODE ? 4 : 8, this.renderer.capabilities.getMaxAnisotropy());
+    const load = (filename: string, color = false) => {
+      const texture = loader.load(new URL(`textures/${filename}`, document.baseURI).href);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      // 78 repeats across a 140 m chunk keeps both ends on the same UV phase.
+      texture.repeat.set(140, 78);
+      texture.anisotropy = anisotropy;
+      if (color) texture.colorSpace = THREE.SRGBColorSpace;
+      return texture;
+    };
+    return {
+      diffuse: load('dense-sand-diffuse-2k.webp', true),
+      normal: VERY_LOW_END ? undefined : load('dense-sand-normal-1k.webp'),
+      roughness: LOW_POWER_MODE ? undefined : load('dense-sand-roughness-1k.webp'),
+    };
   }
 
   private async initPostProcessing() {
@@ -1948,9 +1978,19 @@ export class GameRenderer {
     // horizontal z-fighting bands visible while driving.
     const groundColor = new THREE.Color(palette.ground[0])
       .lerp(new THREE.Color(palette.ground[1] ?? palette.ground[0]), 0.5);
+    const desertGround = this.worldMap === 'desert';
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(250, CHUNK_LENGTH),
-      worldMaterial({ color: groundColor, roughness: 1 }),
+      worldMaterial({
+        color: desertGround ? 0xffffff : groundColor,
+        map: desertGround ? this.sandTextures.diffuse : undefined,
+        normalMap: desertGround ? this.sandTextures.normal : undefined,
+        normalScale: desertGround && this.sandTextures.normal
+          ? new THREE.Vector2(0.38, 0.38)
+          : undefined,
+        roughness: desertGround ? 0.96 : 1,
+        roughnessMap: desertGround ? this.sandTextures.roughness : undefined,
+      }),
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.set(centerX, -0.13, centerZ);
