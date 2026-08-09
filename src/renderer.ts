@@ -1693,6 +1693,10 @@ type SandTextures = {
   normal?: THREE.Texture;
   roughness?: THREE.Texture;
 };
+type EnvironmentSurface = {
+  diffuse: THREE.Texture;
+  normal?: THREE.Texture;
+};
 type RemoteCarRender = {
   car: THREE.Group;
   target: NetworkPlayerState;
@@ -1720,6 +1724,7 @@ export class GameRenderer {
   private seasonIndex = 1;
   private worldMap: WorldMapId = 'mountain';
   private sandTextures: SandTextures;
+  private readonly environmentTextureCache = new Map<string, THREE.Texture>();
   private readonly timeSettings = [
     { name: '새벽', sky: 0x74889a, fog: 0x8798a0, density: 0.0052, hemiSky: 0x9cb8c9, hemiGround: 0x343c43, hemi: 1.35, key: 0xffb37f, keyPower: 3.1, exposure: 0.88, sun: 0xffbd86, sunOffset: [-115, 28, -340] },
     { name: '낮', sky: 0x9db4a5, fog: 0x9eb1a4, density: 0.0047, hemiSky: 0xc8e1d4, hemiGround: 0x46513d, hemi: 2.1, key: 0xffd5a0, keyPower: 4.6, exposure: 1.08, sun: 0xffe1ac, sunOffset: [-145, 85, -360] },
@@ -1797,6 +1802,37 @@ export class GameRenderer {
       diffuse: load('dense-sand-diffuse-2k.webp', true),
       normal: VERY_LOW_END ? undefined : load('dense-sand-normal-1k.webp'),
       roughness: LOW_POWER_MODE ? undefined : load('dense-sand-roughness-1k.webp'),
+    };
+  }
+
+  private loadEnvironmentSurface(
+    prefix: string,
+    repeatX = 1,
+    repeatY = 1,
+    useNormal = true,
+  ): EnvironmentSurface {
+    const load = (kind: 'diffuse' | 'normal', color: boolean) => {
+      const filename = `${prefix}-${kind}-1k.webp`;
+      const cacheKey = `${filename}:${repeatX}:${repeatY}`;
+      const cached = this.environmentTextureCache.get(cacheKey);
+      if (cached) return cached;
+      const texture = new THREE.TextureLoader().load(
+        new URL(`textures/environment/${filename}`, document.baseURI).href,
+      );
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(repeatX, repeatY);
+      texture.anisotropy = Math.min(
+        LOW_POWER_MODE ? 4 : 8,
+        this.renderer.capabilities.getMaxAnisotropy(),
+      );
+      if (color) texture.colorSpace = THREE.SRGBColorSpace;
+      this.environmentTextureCache.set(cacheKey, texture);
+      return texture;
+    };
+    return {
+      diffuse: load('diffuse', true),
+      normal: useNormal && !VERY_LOW_END ? load('normal', false) : undefined,
     };
   }
 
@@ -1979,15 +2015,27 @@ export class GameRenderer {
     const groundColor = new THREE.Color(palette.ground[0])
       .lerp(new THREE.Color(palette.ground[1] ?? palette.ground[0]), 0.5);
     const desertGround = this.worldMap === 'desert';
+    const seasonalGroundPrefix = this.worldMap === 'mountain'
+      ? (this.seasonIndex === 2
+          ? 'autumn-leaves'
+          : this.seasonIndex === 3
+            ? 'snow-ground'
+            : null)
+      : null;
+    const seasonalGround = seasonalGroundPrefix
+      ? this.loadEnvironmentSurface(seasonalGroundPrefix, 70, 40)
+      : null;
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(250, CHUNK_LENGTH),
       worldMaterial({
-        color: desertGround ? 0xffffff : groundColor,
-        map: desertGround ? this.sandTextures.diffuse : undefined,
-        normalMap: desertGround ? this.sandTextures.normal : undefined,
+        color: desertGround || seasonalGround ? 0xffffff : groundColor,
+        map: desertGround ? this.sandTextures.diffuse : seasonalGround?.diffuse,
+        normalMap: desertGround ? this.sandTextures.normal : seasonalGround?.normal,
         normalScale: desertGround && this.sandTextures.normal
           ? new THREE.Vector2(0.38, 0.38)
-          : undefined,
+          : seasonalGround?.normal
+            ? new THREE.Vector2(0.32, 0.32)
+            : undefined,
         roughness: desertGround ? 0.96 : 1,
         roughnessMap: desertGround ? this.sandTextures.roughness : undefined,
       }),
@@ -2059,11 +2107,25 @@ export class GameRenderer {
       }
     }
 
+    const trunkPrefix = this.worldMap === 'mountain' && this.seasonIndex === 3
+      ? 'dead-tree'
+      : 'jacaranda-trunk';
+    const trunkSurface = trees.length
+      ? this.loadEnvironmentSurface(trunkPrefix, 2, 2, false)
+      : null;
+    const crownPrefix = this.worldMap === 'city'
+      ? 'jacaranda-leaves'
+      : this.seasonIndex === 3
+        ? 'winter-tree'
+        : 'searsia-leaves';
+    const crownSurface = trees.length
+      ? this.loadEnvironmentSurface(crownPrefix, 2, 2, false)
+      : null;
     const trunkGeometry = new THREE.CylinderGeometry(0.19, 0.34, 2.8, LOW_POWER_MODE ? 6 : 9);
-    const trunkMaterial = worldMaterial({ color: 0x493828, roughness: 0.96 });
+    const trunkMaterial = worldMaterial({ color: 0x765f48, map: trunkSurface?.diffuse, roughness: 0.96 });
     const trunks = new THREE.InstancedMesh(trunkGeometry, trunkMaterial, trees.length);
     const crownGeometry = new THREE.ConeGeometry(1, 1, LOW_POWER_MODE ? 7 : 11, LOW_POWER_MODE ? 1 : 2);
-    const crownMaterial = worldMaterial({ color: 0xffffff, roughness: 0.9, flatShading: true });
+    const crownMaterial = worldMaterial({ color: 0xffffff, map: crownSurface?.diffuse, roughness: 0.9, flatShading: true });
     const crownLayers = [
       new THREE.InstancedMesh(crownGeometry, crownMaterial, trees.length),
       new THREE.InstancedMesh(crownGeometry, crownMaterial, trees.length),
@@ -2103,9 +2165,26 @@ export class GameRenderer {
 
     const rockPieces = LOW_POWER_MODE ? 1 : 2;
     const rockCount = rocks.length * rockPieces;
+    const rockPrefixes = this.worldMap === 'desert'
+      ? ['desert-cliff', 'boulder-namaqualand-05', 'boulder-01', 'boulder-namaqualand-03']
+      : ['mountain-cliff', 'boulder-01', 'boulder-namaqualand-03', 'boulder-namaqualand-05'];
+    const rockSurface = rocks.length
+      ? this.loadEnvironmentSurface(
+          rockPrefixes[((index % rockPrefixes.length) + rockPrefixes.length) % rockPrefixes.length],
+          2,
+          2,
+        )
+      : null;
     const rockClusters = new THREE.InstancedMesh(
       new THREE.DodecahedronGeometry(1, LOW_POWER_MODE ? 0 : 1),
-      worldMaterial({ color: palette.rock, roughness: 0.94, flatShading: true }),
+      worldMaterial({
+        color: 0xffffff,
+        map: rockSurface?.diffuse,
+        normalMap: rockSurface?.normal,
+        normalScale: rockSurface?.normal ? new THREE.Vector2(0.42, 0.42) : undefined,
+        roughness: 0.94,
+        flatShading: true,
+      }),
       rockCount,
     );
     rocks.forEach((rock, i) => {
@@ -2125,9 +2204,11 @@ export class GameRenderer {
     const shrubCount = this.worldMap === 'city'
       ? (LOW_POWER_MODE ? 5 : 10)
       : (LOW_POWER_MODE ? 8 : 18);
+    const shrubPrefix = this.seasonIndex === 3 ? 'winter-tree' : 'searsia-leaves';
+    const shrubSurface = this.loadEnvironmentSurface(shrubPrefix, 2, 2, false);
     const shrubs = new THREE.InstancedMesh(
       new THREE.IcosahedronGeometry(0.55, LOW_POWER_MODE ? 0 : 1),
-      worldMaterial({ color: palette.leaves[1], roughness: 1, flatShading: true }),
+      worldMaterial({ color: palette.leaves[1], map: shrubSurface.diffuse, roughness: 1, flatShading: true }),
       shrubCount,
     );
     for (let i = 0; i < shrubCount; i++) {
@@ -2148,9 +2229,17 @@ export class GameRenderer {
     if (this.worldMap === 'city') {
       const buildingCount = LOW_POWER_MODE ? 14 : 24;
       const buildingGeometry = new THREE.BoxGeometry(1, 1, 1);
+      const buildingSurface = this.loadEnvironmentSurface(index % 2 ? 'red-brick' : 'stone-wall', 3, 5);
       const buildings = new THREE.InstancedMesh(
         buildingGeometry,
-        worldMaterial({ color: 0xffffff, roughness: 0.88, metalness: 0.05 }),
+        worldMaterial({
+          color: 0xffffff,
+          map: buildingSurface.diffuse,
+          normalMap: buildingSurface.normal,
+          normalScale: buildingSurface.normal ? new THREE.Vector2(0.3, 0.3) : undefined,
+          roughness: 0.88,
+          metalness: 0.05,
+        }),
         buildingCount,
       );
       const windowPanels = new THREE.InstancedMesh(

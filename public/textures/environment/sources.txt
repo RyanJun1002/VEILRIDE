@@ -1,0 +1,23 @@
+MISTLINE environment texture derivatives
+License for every asset listed below: CC0 1.0 Universal
+Source library: Poly Haven (https://polyhaven.com/license)
+
+https://polyhaven.com/a/marble_cliff_04
+https://polyhaven.com/a/marble_cliff_05
+https://polyhaven.com/a/snow_01
+https://polyhaven.com/a/forest_leaves_04
+https://polyhaven.com/a/grass_bermuda_01
+https://polyhaven.com/a/red_brick
+https://polyhaven.com/a/stone_wall_05
+https://polyhaven.com/a/jacaranda_tree
+https://polyhaven.com/a/searsia_lucida
+https://polyhaven.com/a/dead_tree_trunk_02
+https://polyhaven.com/a/namaqualand_boulder_05
+https://polyhaven.com/a/boulder_01
+https://polyhaven.com/a/namaqualand_boulder_03
+https://polyhaven.com/a/othonna_cerarioides
+
+The 1K source maps were converted to WebP by
+tools/fetch_polyhaven_environment.py. Model-derived surface maps are applied to
+MISTLINE's low-poly instanced geometry instead of shipping the original heavy
+model meshes.
