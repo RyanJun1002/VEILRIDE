@@ -593,6 +593,7 @@ class EngineAudio {
   private smoothedRpm = this.profile.idleRpm;
   private previousThrottle = 0;
   private popCooldown = 0;
+  private pauseToken = 0;
 
   constructor(model: CarModelId) {
     this.filter.type = 'lowpass';
@@ -673,10 +674,24 @@ class EngineAudio {
   }
 
   start() {
-    void this.context.resume();
+    const token = ++this.pauseToken;
+    void this.context.resume().then(() => {
+      if (token !== this.pauseToken) return;
+      const now = this.context.currentTime;
+      this.gain.gain.cancelScheduledValues(now);
+      this.gain.gain.setTargetAtTime(this.profile.volume, now, 0.18);
+    });
+  }
+
+  pause() {
+    const token = ++this.pauseToken;
     const now = this.context.currentTime;
     this.gain.gain.cancelScheduledValues(now);
-    this.gain.gain.setTargetAtTime(this.profile.volume, now, 0.3);
+    this.gain.gain.setValueAtTime(0.0001, now);
+    this.previousThrottle = 0;
+    void this.context.suspend().then(() => {
+      if (token !== this.pauseToken) void this.context.resume();
+    });
   }
 
   stop(immediate = false) {
@@ -703,10 +718,14 @@ class EngineAudio {
     const rpmRange = this.profile.redlineRpm - this.profile.idleRpm;
     const rollingRpm = this.profile.idleRpm + rpmRange * (0.28 + gearProgress * 0.66);
     const launchRpm = this.profile.idleRpm + driveThrottle * Math.min(1500, rpmRange * 0.24);
-    const targetRpm = kmh < 2
+    const drivingRpm = kmh < 2
       ? launchRpm
       : Math.min(this.profile.redlineRpm, rollingRpm + driveThrottle * rpmRange * 0.06);
-    const rpmResponse = driveThrottle > this.previousThrottle ? 0.16 : 0.09;
+    const brakingRpm = this.profile.idleRpm + Math.min(rpmRange * 0.2, kmh * 8);
+    const targetRpm = braking
+      ? Math.min(this.smoothedRpm, brakingRpm)
+      : drivingRpm;
+    const rpmResponse = braking ? 0.24 : driveThrottle > this.previousThrottle ? 0.16 : 0.09;
     this.smoothedRpm += (targetRpm - this.smoothedRpm) * rpmResponse;
 
     const rpmRatio = Math.max(0, Math.min(1, (this.smoothedRpm - this.profile.idleRpm) / rpmRange));
@@ -825,7 +844,7 @@ function clearTouchInput() {
 function setPause(value: boolean) {
   if (!running) return;
   paused = value;
-  if (paused) audio?.stop(true);
+  if (paused) audio?.pause();
   else audio?.start();
   pause.classList.toggle('is-hidden', !paused);
   hud.classList.toggle('is-dimmed', paused);
