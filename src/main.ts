@@ -674,15 +674,25 @@ class EngineAudio {
 
   start() {
     void this.context.resume();
-    this.gain.gain.setTargetAtTime(this.profile.volume, this.context.currentTime, 0.3);
+    const now = this.context.currentTime;
+    this.gain.gain.cancelScheduledValues(now);
+    this.gain.gain.setTargetAtTime(this.profile.volume, now, 0.3);
   }
 
-  stop() {
-    this.gain.gain.setTargetAtTime(0.0001, this.context.currentTime, 0.12);
+  stop(immediate = false) {
+    const now = this.context.currentTime;
+    this.gain.gain.cancelScheduledValues(now);
+    if (immediate) {
+      this.gain.gain.setValueAtTime(Math.max(0.0001, this.gain.gain.value), now);
+      this.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.025);
+    } else {
+      this.gain.gain.setTargetAtTime(0.0001, now, 0.12);
+    }
     this.previousThrottle = 0;
   }
 
-  update(speed: number, throttle: number) {
+  update(speed: number, throttle: number, braking = false) {
+    const driveThrottle = braking ? 0 : throttle;
     const absoluteSpeed = Math.abs(speed);
     const kmh = absoluteSpeed * 3.6;
     let gear = this.profile.shiftKmh.findIndex(limit => kmh < limit);
@@ -692,11 +702,11 @@ class EngineAudio {
     const gearProgress = Math.max(0, Math.min(1, (kmh - lowerLimit) / Math.max(1, upperLimit - lowerLimit)));
     const rpmRange = this.profile.redlineRpm - this.profile.idleRpm;
     const rollingRpm = this.profile.idleRpm + rpmRange * (0.28 + gearProgress * 0.66);
-    const launchRpm = this.profile.idleRpm + throttle * Math.min(1500, rpmRange * 0.24);
+    const launchRpm = this.profile.idleRpm + driveThrottle * Math.min(1500, rpmRange * 0.24);
     const targetRpm = kmh < 2
       ? launchRpm
-      : Math.min(this.profile.redlineRpm, rollingRpm + throttle * rpmRange * 0.06);
-    const rpmResponse = throttle > this.previousThrottle ? 0.16 : 0.09;
+      : Math.min(this.profile.redlineRpm, rollingRpm + driveThrottle * rpmRange * 0.06);
+    const rpmResponse = driveThrottle > this.previousThrottle ? 0.16 : 0.09;
     this.smoothedRpm += (targetRpm - this.smoothedRpm) * rpmResponse;
 
     const rpmRatio = Math.max(0, Math.min(1, (this.smoothedRpm - this.profile.idleRpm) / rpmRange));
@@ -718,7 +728,7 @@ class EngineAudio {
       );
     });
     this.filter.frequency.setTargetAtTime(
-      Math.min(3200, this.profile.filterBase + this.smoothedRpm * this.profile.filterRpm + throttle * 360),
+      Math.min(3200, this.profile.filterBase + this.smoothedRpm * this.profile.filterRpm + driveThrottle * 360),
       now,
       0.06,
     );
@@ -728,32 +738,33 @@ class EngineAudio {
       0.065,
     );
     this.noiseGain.gain.setTargetAtTime(
-      0.01 + this.profile.intake * (throttle * 0.075 + rpmRatio * 0.026),
+      braking ? 0.0001 : 0.01 + this.profile.intake * (driveThrottle * 0.075 + rpmRatio * 0.026),
       now,
-      0.045,
+      braking ? 0.018 : 0.045,
     );
     this.engineBus.gain.setTargetAtTime(
-      0.58 + throttle * 0.26 + rpmRatio * 0.12,
+      0.58 + driveThrottle * 0.26 + rpmRatio * 0.12,
       now,
       0.05,
     );
     this.gain.gain.setTargetAtTime(
-      this.profile.volume * (0.82 + throttle * 0.28 + rpmRatio * 0.16),
+      this.profile.volume * (0.82 + driveThrottle * 0.28 + rpmRatio * 0.16),
       now,
       0.07,
     );
 
     if (
       this.previousThrottle > 0.62
-      && throttle < 0.18
+      && driveThrottle < 0.18
       && kmh > 24
       && now >= this.popCooldown
       && this.profile.overrun > 0.15
+      && !braking
     ) {
       this.triggerOverrunPop(now, firingFrequency);
       this.popCooldown = now + 0.22 + Math.random() * 0.18;
     }
-    this.previousThrottle = throttle;
+    this.previousThrottle = driveThrottle;
   }
 
   private triggerOverrunPop(now: number, firingFrequency: number) {
@@ -814,6 +825,8 @@ function clearTouchInput() {
 function setPause(value: boolean) {
   if (!running) return;
   paused = value;
+  if (paused) audio?.stop(true);
+  else audio?.start();
   pause.classList.toggle('is-hidden', !paused);
   hud.classList.toggle('is-dimmed', paused);
   keys.clear();
@@ -861,7 +874,7 @@ document.querySelector('#mainMenuButton')!.addEventListener('click', returnToMai
 addEventListener('keydown', (event) => {
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(event.code)) event.preventDefault();
-  if (event.code === 'Escape') setPause(!paused);
+  if (event.code === 'Escape' && !event.repeat) setPause(!paused);
   if (event.code === 'KeyC' && !event.repeat) {
     view.cycleCamera();
     flashToast(UI_COPY[language].cameraChanged);
@@ -968,7 +981,11 @@ function loop(now: number) {
       nearMiss.classList.remove('show');
       requestAnimationFrame(() => nearMiss.classList.add('show'));
     }
-    audio?.update(simulation.player.forwardSpeed, Math.min(1, input.throttle + input.boost * 0.7));
+    audio?.update(
+      simulation.player.forwardSpeed,
+      Math.min(1, input.throttle + input.boost * 0.7),
+      input.brake > 0 || input.handbrake,
+    );
     updateHud();
   } else if (!running) {
     simulationAccumulator = 0;
