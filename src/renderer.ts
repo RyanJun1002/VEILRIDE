@@ -13,8 +13,9 @@ const mobileDevice = matchMedia('(pointer: coarse)').matches || innerWidth <= 82
 const LOW_POWER_MODE = mobileDevice || deviceMemory <= 4 || cpuCores <= 4;
 const VERY_LOW_END = deviceMemory <= 3 || cpuCores <= 2;
 const CHUNK_COUNT = LOW_POWER_MODE ? (VERY_LOW_END ? 6 : 8) : 13;
-const TRAFFIC_RENDER_LIMIT = LOW_POWER_MODE ? (VERY_LOW_END ? 7 : 10) : Number.POSITIVE_INFINITY;
+const TRAFFIC_RENDER_LIMIT = LOW_POWER_MODE ? (VERY_LOW_END ? 9 : 12) : Number.POSITIVE_INFINITY;
 const LOW_RENDER_SCALE = VERY_LOW_END ? 0.84 : 0.96;
+const LOW_POWER_PIXEL_RATIO = VERY_LOW_END ? 1 : Math.min(devicePixelRatio, 1.15);
 
 function worldMaterial(parameters: THREE.MeshStandardMaterialParameters) {
   if (!LOW_POWER_MODE) return new THREE.MeshStandardMaterial(parameters);
@@ -728,7 +729,9 @@ function createLightweightTrafficCar(color: number, model: CarModelId) {
   const group = new THREE.Group();
   const appearance = { ...DEFAULT_CUSTOMIZATION, color, model };
   const paint = new THREE.MeshLambertMaterial({ color });
-  const cabinMaterial = new THREE.MeshLambertMaterial({ color: 0x4f696b });
+  const cabinMaterial = new THREE.MeshLambertMaterial({ color: 0x304d50 });
+  const glass = new THREE.MeshBasicMaterial({ color: 0x20383b });
+  const trim = new THREE.MeshLambertMaterial({ color: 0x18201f });
   const rubber = new THREE.MeshLambertMaterial({ color: 0x090b0a });
   const white = new THREE.MeshBasicMaterial({ color: 0xf0fff8 });
   const red = new THREE.MeshBasicMaterial({ color: 0xd7281e });
@@ -753,7 +756,61 @@ function createLightweightTrafficCar(color: number, model: CarModelId) {
   headlights.position.set(0, shape.bodyY + 0.08, -shape.length * 0.505);
   const taillights = new THREE.Mesh(new THREE.BoxGeometry(shape.width * 0.7, 0.1, 0.05), red);
   taillights.position.set(0, shape.bodyY + 0.08, shape.length * 0.505);
-  group.add(body, cabin, headlights, taillights);
+  const roof = new THREE.Mesh(
+    new THREE.BoxGeometry(shape.cabinWidth * 0.94, 0.1, shape.cabinLength * 0.82),
+    paint,
+  );
+  roof.position.set(0, shape.cabinY + shape.cabinHeight * 0.52, shape.cabinZ);
+  const windshield = new THREE.Mesh(
+    new THREE.BoxGeometry(shape.cabinWidth * 0.76, shape.cabinHeight * 0.58, 0.045),
+    glass,
+  );
+  windshield.position.set(0, shape.cabinY, shape.cabinZ - shape.cabinLength * 0.505);
+  const rearWindow = windshield.clone();
+  rearWindow.position.z = shape.cabinZ + shape.cabinLength * 0.505;
+
+  const sideWindowGeometry = new THREE.BoxGeometry(0.045, shape.cabinHeight * 0.5, shape.cabinLength * 0.68);
+  const sideWindows = new THREE.InstancedMesh(sideWindowGeometry, glass, 2);
+  const sideWindowMatrix = new THREE.Matrix4();
+  sideWindows.setMatrixAt(0, sideWindowMatrix.makeTranslation(-shape.cabinWidth * 0.51, shape.cabinY, shape.cabinZ));
+  sideWindows.setMatrixAt(1, sideWindowMatrix.makeTranslation(shape.cabinWidth * 0.51, shape.cabinY, shape.cabinZ));
+
+  const bumperGeometry = new THREE.BoxGeometry(shape.width * 0.92, 0.13, 0.13);
+  const bumpers = new THREE.InstancedMesh(bumperGeometry, trim, 2);
+  const bumperMatrix = new THREE.Matrix4();
+  bumpers.setMatrixAt(0, bumperMatrix.makeTranslation(0, shape.wheelRadius * 0.72, -shape.length * 0.515));
+  bumpers.setMatrixAt(1, bumperMatrix.makeTranslation(0, shape.wheelRadius * 0.72, shape.length * 0.515));
+  group.add(body, cabin, roof, windshield, rearWindow, sideWindows, bumpers, headlights, taillights);
+
+  if (model === 'trail-pickup') {
+    const railGeometry = new THREE.BoxGeometry(0.13, 0.38, 2.08);
+    const bedRails = new THREE.InstancedMesh(railGeometry, paint, 2);
+    const railMatrix = new THREE.Matrix4();
+    bedRails.setMatrixAt(0, railMatrix.makeTranslation(-0.96, 1.02, 1.25));
+    bedRails.setMatrixAt(1, railMatrix.makeTranslation(0.96, 1.02, 1.25));
+    group.add(bedRails);
+  } else if (model === 'metro-bus') {
+    const pillarGeometry = new THREE.BoxGeometry(0.06, shape.cabinHeight * 0.64, 0.08);
+    const pillars = new THREE.InstancedMesh(pillarGeometry, trim, 10);
+    const pillarMatrix = new THREE.Matrix4();
+    for (let sideIndex = 0; sideIndex < 2; sideIndex++) {
+      for (let pillarIndex = 0; pillarIndex < 5; pillarIndex++) {
+        pillars.setMatrixAt(
+          sideIndex * 5 + pillarIndex,
+          pillarMatrix.makeTranslation(
+            (sideIndex ? 1 : -1) * shape.cabinWidth * 0.52,
+            shape.cabinY,
+            shape.cabinZ - 2.35 + pillarIndex * 1.18,
+          ),
+        );
+      }
+    }
+    group.add(pillars);
+  } else if (model === 'apex-r') {
+    const spoiler = new THREE.Mesh(new THREE.BoxGeometry(shape.width * 0.72, 0.08, 0.18), trim);
+    spoiler.position.set(0, shape.bodyY + shape.bodyHeight * 0.68, shape.length * 0.43);
+    group.add(spoiler);
+  }
 
   const wheelGeometry = new THREE.CylinderGeometry(shape.wheelRadius, shape.wheelRadius, 0.24, 8);
   const wheels: THREE.Group[] = [];
@@ -1636,7 +1693,7 @@ export class GameRenderer {
   constructor(canvas: HTMLCanvasElement) {
     this.playerCar = createCar(DEFAULT_CUSTOMIZATION.color, true, DEFAULT_CUSTOMIZATION);
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !VERY_LOW_END, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(LOW_POWER_MODE ? 1 : Math.min(devicePixelRatio, 1.25));
+    this.renderer.setPixelRatio(LOW_POWER_MODE ? LOW_POWER_PIXEL_RATIO : Math.min(devicePixelRatio, 1.25));
     this.renderer.shadowMap.enabled = !LOW_POWER_MODE;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -1694,21 +1751,32 @@ export class GameRenderer {
 
   setTraffic(traffic: TrafficState[]) {
     for (const state of traffic.slice(0, TRAFFIC_RENDER_LIMIT)) {
-      if (!this.trafficCars.has(state.id)) {
-        const appearance: CarCustomization = {
-          ...DEFAULT_CUSTOMIZATION,
-          model: state.model,
-          color: state.color,
-          spoiler: state.model === 'apex-r',
-        };
-        const car = LOW_POWER_MODE
-          ? createLightweightTrafficCar(state.color, state.model)
-          : createCar(state.color, false, appearance);
-        car.scale.setScalar(LOW_POWER_MODE ? 1.05 : 0.94 + (state.id % 3) * 0.025);
-        this.scene.add(car);
-        this.trafficCars.set(state.id, car);
-      }
+      this.ensureTrafficCar(state);
     }
+  }
+
+  private ensureTrafficCar(state: TrafficState) {
+    const existing = this.trafficCars.get(state.id);
+    const existingAppearance = existing?.userData.appearance as CarCustomization | undefined;
+    if (existing && existingAppearance?.model === state.model) return existing;
+    if (existing) {
+      this.scene.remove(existing);
+      this.disposeCar(existing);
+      this.trafficCars.delete(state.id);
+    }
+    const appearance: CarCustomization = {
+      ...DEFAULT_CUSTOMIZATION,
+      model: state.model,
+      color: state.color,
+      spoiler: state.model === 'apex-r',
+    };
+    const car = LOW_POWER_MODE
+      ? createLightweightTrafficCar(state.color, state.model)
+      : createCar(state.color, false, appearance);
+    car.scale.setScalar(LOW_POWER_MODE ? 1.05 : 0.94 + (state.id % 3) * 0.025);
+    this.scene.add(car);
+    this.trafficCars.set(state.id, car);
+    return car;
   }
 
   setTrafficEnabled(enabled: boolean) {
@@ -2051,9 +2119,18 @@ export class GameRenderer {
       clusterTexture.needsUpdate = true;
     }
 
-    for (const state of traffic) {
-      const car = this.trafficCars.get(state.id);
-      if (!car) continue;
+    // Tablets keep a small render pool, but it follows the closest traffic
+    // instead of permanently hiding cars with higher IDs. This prevents an
+    // invisible simulation car from reaching the player or causing a collision.
+    const renderedTraffic = LOW_POWER_MODE
+      ? [...traffic]
+        .sort((a, b) => Math.abs(a.z - player.z) - Math.abs(b.z - player.z))
+        .slice(0, TRAFFIC_RENDER_LIMIT)
+      : traffic;
+    const renderedTrafficIds = new Set(renderedTraffic.map(state => state.id));
+    for (const [id, car] of this.trafficCars) car.visible = renderedTrafficIds.has(id);
+    for (const state of renderedTraffic) {
+      const car = this.ensureTrafficCar(state);
       car.position.set(roadCenter(state.z) + state.lane, 0.04, state.z);
       car.rotation.y = -roadTangent(state.z) + (state.direction === -1 ? Math.PI : 0);
       const npcWheels = car.userData.wheels as THREE.Group[];
