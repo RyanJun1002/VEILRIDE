@@ -103,6 +103,22 @@ kbd { min-width: 30px; padding: 5px 7px; border: 1px solid rgba(255,255,255,.2);
 .multiplayer-hud { position: absolute; right: 78px; top: 26px; height: 32px; padding: 0 11px; display: flex; align-items: center; gap: 7px; background: rgba(11,18,16,.42); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(12px); font: 600 8px/1 var(--font-ui); letter-spacing: .1em; }
 .multiplayer-hud i { width: 6px; height: 6px; border-radius: 50%; background: #62e2b7; box-shadow: 0 0 8px #62e2b7; }
 .multiplayer-hud.is-hidden { display: none; }
+.locator-bar { --locator-0: #ff6a45; --locator-1: #68e7bc; --locator-2: #f5d06f; --locator-3: #79b7ff; position: absolute; top: 68px; left: 50%; width: min(320px, calc(100vw - 160px)); transform: translateX(-50%); padding: 7px 10px 9px; background: linear-gradient(180deg, rgba(10,17,15,.7), rgba(10,17,15,.46)); border: 1px solid rgba(255,255,255,.13); backdrop-filter: blur(12px); transition: opacity .18s, transform .18s, visibility .18s; }
+.locator-bar.is-hidden { opacity: 0; visibility: hidden; transform: translate(-50%, -5px); }
+.locator-bar__heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font: 700 7px/1 var(--font-ui); letter-spacing: .18em; color: rgba(255,255,255,.72); }
+.locator-bar__heading small { color: rgba(255,255,255,.42); font: inherit; letter-spacing: .1em; }
+.locator-track { position: relative; height: 25px; border-top: 1px solid rgba(255,255,255,.14); background: linear-gradient(90deg, rgba(242,93,59,.08), transparent 20% 80%, rgba(242,93,59,.08)); }
+.locator-track::before { content: ''; position: absolute; top: 8px; left: 4%; right: 4%; height: 1px; background: linear-gradient(90deg, rgba(255,255,255,.14), rgba(255,255,255,.38) 50%, rgba(255,255,255,.14)); }
+.locator-axis { position: absolute; bottom: 0; color: rgba(255,255,255,.34); font: 600 6px/1 var(--font-ui); letter-spacing: .12em; }
+.locator-axis--left { left: 1px; }
+.locator-axis--front { left: 50%; transform: translateX(-50%); }
+.locator-axis--right { right: 1px; }
+.locator-center { position: absolute; top: 4px; left: 50%; width: 1px; height: 10px; background: rgba(255,255,255,.5); }
+.locator-markers { position: absolute; inset: 0; }
+.locator-marker { position: absolute; left: var(--locator-position); top: 4px; display: flex; flex-direction: column; align-items: center; transform: translateX(-50%); color: var(--locator-color); filter: drop-shadow(0 1px 5px rgba(0,0,0,.8)); transition: left .12s linear; }
+.locator-marker b { display: grid; place-items: center; min-width: 19px; height: 11px; padding: 0 3px; border-radius: 2px; background: var(--locator-color); color: #101714; font: 900 6px/1 var(--font-ui); letter-spacing: .03em; }
+.locator-marker small { margin-top: 2px; white-space: nowrap; color: rgba(255,255,255,.82); font: 700 6px/1 var(--font-ui); }
+.locator-marker.is-behind b { clip-path: polygon(50% 0, 100% 100%, 0 100%); height: 12px; padding-top: 3px; color: #2b1710; }
 .icon-button { pointer-events: auto; position: absolute; right: 30px; top: 25px; width: 36px; height: 34px; border: 1px solid rgba(255,255,255,.15); background: rgba(10,16,14,.35); backdrop-filter: blur(10px); cursor: pointer; color: rgba(255,255,255,.75); }
 
 .speedometer { position: absolute; left: 34px; bottom: 28px; display: flex; align-items: end; gap: 10px; filter: drop-shadow(0 4px 12px rgba(0,0,0,.3)); }
@@ -133,7 +149,7 @@ kbd { min-width: 30px; padding: 5px 7px; border: 1px solid rgba(255,255,255,.2);
 
 html[data-quality='low'] .grain { display: none; }
 html[data-quality='low'] .vignette { box-shadow: inset 0 0 54px rgba(7, 12, 10, calc(.16 + var(--impact) * .4)); }
-html[data-quality='low'] :is(.garage-card, .online-card, .drive-settings, .route-chip, .multiplayer-hud, .icon-button, .pause, .start-button, .touch-controls button) { backdrop-filter: none; }
+html[data-quality='low'] :is(.garage-card, .online-card, .drive-settings, .route-chip, .multiplayer-hud, .locator-bar, .icon-button, .pause, .start-button, .touch-controls button) { backdrop-filter: none; }
 
 @media (max-width: 720px), (pointer: coarse) {
   .menu__controls { display: none; }
@@ -147,6 +163,7 @@ html[data-quality='low'] :is(.garage-card, .online-card, .drive-settings, .route
   .custom-row { flex-wrap: wrap; }
   .brand { left: max(18px, env(safe-area-inset-left)); top: max(18px, env(safe-area-inset-top)); }
   .route-chip { top: 62px; }
+  .locator-bar { top: 102px; width: min(290px, calc(100vw - 32px)); padding: 6px 9px 8px; }
   .icon-button { top: max(17px, env(safe-area-inset-top)); right: max(18px, env(safe-area-inset-right)); }
   .multiplayer-hud { right: 62px; top: 17px; }
   .speedometer { left: max(18px, env(safe-area-inset-left)); bottom: calc(146px + env(safe-area-inset-bottom)); }
@@ -179,6 +196,7 @@ html[data-quality='low'] :is(.garage-card, .online-card, .drive-settings, .route
 @media (max-height: 520px) and (orientation: landscape) {
   .brand { display: none; }
   .route-chip { top: max(12px, env(safe-area-inset-top)); }
+  .locator-bar { top: calc(max(12px, env(safe-area-inset-top)) + 40px); width: min(270px, calc(100vw - 140px)); }
   .multiplayer-hud { display: none; }
   .speedometer { bottom: calc(116px + env(safe-area-inset-bottom)); transform: scale(.82); transform-origin: left bottom; }
   .touch-controls button { width: 70px; height: 70px; }

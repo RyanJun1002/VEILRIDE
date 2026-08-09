@@ -103,6 +103,19 @@
         <div class="brand">MIST<span>LINE</span></div>
         <div class="route-chip"><i></i><span>RIDGEWAY 09</span><small id="distance">0.0 KM</small></div>
         <div id="multiplayerHud" class="multiplayer-hud is-hidden"><i></i><span>SOLO</span></div>
+        <div id="locatorBar" class="locator-bar is-hidden" aria-live="polite">
+          <div class="locator-bar__heading">
+            <span id="locatorLabel">팀 로케이터</span>
+            <small id="locatorSummary">0 PLAYERS</small>
+          </div>
+          <div class="locator-track">
+            <span id="locatorLeft" class="locator-axis locator-axis--left">좌</span>
+            <span id="locatorFront" class="locator-axis locator-axis--front">전방</span>
+            <span id="locatorRight" class="locator-axis locator-axis--right">우</span>
+            <i class="locator-center" aria-hidden="true"></i>
+            <div id="locatorMarkers" class="locator-markers"></div>
+          </div>
+        </div>
 
         <div class="speedometer">
           <span id="gear" class="gear">D</span>

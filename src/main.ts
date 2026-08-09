@@ -10,7 +10,7 @@ import {
   type CarCustomization,
   type CarModelId,
 } from './cars';
-import { MultiplayerSession, cleanRoomCode } from './multiplayer';
+import { MultiplayerSession, cleanRoomCode, type NetworkPlayerState } from './multiplayer';
 import { PresenceSession } from './presence';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
@@ -33,6 +33,13 @@ const topSpeedStat = document.querySelector<HTMLElement>('#speedStat')!;
 const gripStat = document.querySelector<HTMLElement>('#gripStat')!;
 const networkStatus = document.querySelector<HTMLElement>('#networkStatus')!;
 const multiplayerHud = document.querySelector<HTMLElement>('#multiplayerHud')!;
+const locatorBar = document.querySelector<HTMLElement>('#locatorBar')!;
+const locatorLabel = document.querySelector<HTMLElement>('#locatorLabel')!;
+const locatorSummary = document.querySelector<HTMLElement>('#locatorSummary')!;
+const locatorLeft = document.querySelector<HTMLElement>('#locatorLeft')!;
+const locatorFront = document.querySelector<HTMLElement>('#locatorFront')!;
+const locatorRight = document.querySelector<HTMLElement>('#locatorRight')!;
+const locatorMarkers = document.querySelector<HTMLElement>('#locatorMarkers')!;
 const roomCodeInput = document.querySelector<HTMLInputElement>('#roomCodeInput')!;
 const roomCodeDisplay = document.querySelector<HTMLButtonElement>('#roomCodeDisplay')!;
 const soloButton = document.querySelector<HTMLButtonElement>('#soloButton')!;
@@ -138,6 +145,7 @@ let audio: EngineAudio | null = null;
 let nextNetworkSync = 0;
 let lastVisualFrame = 0;
 let simulationAccumulator = 0;
+const locatorMarkerElements = new Map<string, HTMLElement>();
 const SIMULATION_STEP = 1 / 60;
 const MAX_SIMULATION_STEPS = 6;
 
@@ -204,6 +212,10 @@ function applyLanguage() {
   languageLabel.textContent = copy.language;
   settingsState.textContent = `TRAFFIC ${simulation.trafficEnabled ? 'ON' : 'OFF'} · ${language === 'ko' ? '한국어' : 'ENGLISH'}`;
   updatePresenceUi(currentOnlineCount);
+  locatorLabel.textContent = language === 'ko' ? '팀 로케이터' : 'ALLY LOCATOR';
+  locatorLeft.textContent = language === 'ko' ? '좌' : 'L';
+  locatorFront.textContent = language === 'ko' ? '전방' : 'FRONT';
+  locatorRight.textContent = language === 'ko' ? '우' : 'R';
   document.querySelectorAll<HTMLElement>('.menu__controls span').forEach((label, index) => {
     label.textContent = copy.controls[index] ?? label.textContent;
   });
@@ -219,6 +231,56 @@ function applyLanguage() {
   networkStatus.textContent = multiplayer.active
     ? localizeNetworkMessage(lastNetworkMessage)
     : copy.soloDrive;
+}
+
+function formatLocatorDistance(distance: number) {
+  if (distance < 1000) return `${Math.max(1, Math.round(distance))} m`;
+  return `${(distance / 1000).toFixed(distance < 10000 ? 1 : 0)} km`;
+}
+
+function updateLocator(remotePlayers: NetworkPlayerState[]) {
+  const visibleIds = new Set(remotePlayers.map(player => player.id));
+  locatorMarkerElements.forEach((marker, id) => {
+    if (visibleIds.has(id)) return;
+    marker.remove();
+    locatorMarkerElements.delete(id);
+  });
+
+  locatorBar.classList.toggle('is-hidden', remotePlayers.length === 0);
+  locatorSummary.textContent = `${remotePlayers.length} PLAYER${remotePlayers.length === 1 ? '' : 'S'}`;
+
+  remotePlayers.forEach((remotePlayer, index) => {
+    let marker = locatorMarkerElements.get(remotePlayer.id);
+    if (!marker) {
+      marker = document.createElement('span');
+      marker.className = 'locator-marker';
+      marker.innerHTML = '<b></b><small></small>';
+      locatorMarkers.append(marker);
+      locatorMarkerElements.set(remotePlayer.id, marker);
+    }
+
+    const dx = remotePlayer.x - simulation.player.x;
+    const dz = remotePlayer.z - simulation.player.z;
+    const targetHeading = Math.atan2(dx, -dz);
+    const relativeHeading = Math.atan2(
+      Math.sin(targetHeading - simulation.player.heading),
+      Math.cos(targetHeading - simulation.player.heading),
+    );
+    const isBehind = Math.abs(relativeHeading) > Math.PI * 0.72;
+    const position = 50 + (relativeHeading / Math.PI) * 46;
+    const distance = Math.hypot(dx, dz);
+    const direction = isBehind
+      ? (language === 'ko' ? '후방' : 'BEHIND')
+      : (language === 'ko' ? '전방' : 'FRONT');
+    const distanceLabel = formatLocatorDistance(distance);
+
+    marker.style.setProperty('--locator-position', `${position.toFixed(2)}%`);
+    marker.style.setProperty('--locator-color', `var(--locator-${index % 4})`);
+    marker.classList.toggle('is-behind', isBehind);
+    marker.querySelector('b')!.textContent = `P${index + 1}`;
+    marker.querySelector('small')!.textContent = distanceLabel;
+    marker.setAttribute('aria-label', `P${index + 1}, ${direction}, ${distanceLabel}`);
+  });
 }
 
 function updateGarageUi() {
@@ -313,6 +375,7 @@ multiplayer.onStatus = (message, connected) => {
   lastNetworkMessage = message;
   networkStatus.textContent = localizeNetworkMessage(message);
   multiplayerHud.classList.toggle('is-hidden', !connected);
+  if (!connected) updateLocator([]);
   roomCodeDisplay.classList.toggle('is-hidden', !multiplayer.code);
   roomCodeDisplay.textContent = multiplayer.code ? `ROOM ${multiplayer.code}` : '';
 };
@@ -320,6 +383,7 @@ multiplayer.onStatus = (message, connected) => {
 multiplayer.onPlayerCount = count => {
   const label = multiplayerHud.querySelector('span')!;
   label.textContent = `${count} PLAYER${count > 1 ? 'S' : ''}`;
+  if (count <= 1) updateLocator([]);
 };
 
 soloButton.addEventListener('click', () => {
@@ -547,6 +611,7 @@ function returnToMainMenu() {
   setOnlineControls('solo');
   roomCodeInput.value = '';
   view.setRemotePlayers([]);
+  updateLocator([]);
   view.resetCamera();
   audio?.stop();
   updateHud();
@@ -708,7 +773,9 @@ function loop(now: number) {
   if (!visualInterval || now - lastVisualFrame >= visualInterval) {
     const visualDt = lastVisualFrame ? Math.min(0.08, (now - lastVisualFrame) / 1000) : frameDt;
     lastVisualFrame = now;
-    view.setRemotePlayers(multiplayer.getRemotePlayers());
+    const remotePlayers = multiplayer.getRemotePlayers();
+    view.setRemotePlayers(remotePlayers);
+    updateLocator(remotePlayers);
     view.update(
       simulation.player,
       simulation.trafficEnabled ? simulation.traffic : [],
