@@ -525,9 +525,9 @@ const ENGINE_SOUNDS: Record<CarModelId, EngineSoundProfile> = {
     filterBase: 320, filterRpm: 0.13, resonance: 2.2, bodyFrequency: 92, bodyGain: 5.5, intake: 0.38, roughness: 0.16, overrun: 0.18, volume: 0.031,
   },
   'apex-r': {
-    ratios: [1.12, 1.82, 0.56], detunes: [-3, 4, 8], voices: [0.44, 0.09, 0.38], harmonicRolloff: 1.82, toneCut: -6.5,
+    ratios: [0.56, 0.28, 1], detunes: [-3, 4, 0], voices: [0.56, 0.34, 0], harmonicRolloff: 3.1, toneCut: -16,
     idleRpm: 920, redlineRpm: 8400, cylinders: 8, shiftKmh: [44, 82, 126, 178, 235, 305],
-    filterBase: 420, filterRpm: 0.15, resonance: 2.8, bodyFrequency: 108, bodyGain: 6.2, intake: 0.52, roughness: 0.2, overrun: 0.52, volume: 0.029,
+    filterBase: 280, filterRpm: 0.07, resonance: 1.2, bodyFrequency: 74, bodyGain: 8.2, intake: 0.05, roughness: 0.18, overrun: 0.18, volume: 0.034,
   },
   'ridge-x': {
     ratios: [0.82, 1.52, 0.41], detunes: [-12, 9, -4], voices: [0.44, 0.16, 0.43], harmonicRolloff: 2.08, toneCut: -7,
@@ -550,9 +550,9 @@ const ENGINE_SOUNDS: Record<CarModelId, EngineSoundProfile> = {
     filterBase: 170, filterRpm: 0.08, resonance: 1.3, bodyFrequency: 52, bodyGain: 9.5, intake: 0.38, roughness: 0.48, overrun: 0.08, volume: 0.043,
   },
   'storm-moto': {
-    ratios: [1.32, 2.35, 0.66], detunes: [-2, 3, 7], voices: [0.42, 0.06, 0.37], harmonicRolloff: 1.95, toneCut: -9,
+    ratios: [0.56, 0.28, 1], detunes: [-2, 3, 0], voices: [0.55, 0.35, 0], harmonicRolloff: 3.2, toneCut: -18,
     idleRpm: 1350, redlineRpm: 13200, cylinders: 4, shiftKmh: [48, 86, 128, 174, 225, 285],
-    filterBase: 520, filterRpm: 0.16, resonance: 3.1, bodyFrequency: 122, bodyGain: 3.8, intake: 0.64, roughness: 0.13, overrun: 0.42, volume: 0.026,
+    filterBase: 320, filterRpm: 0.07, resonance: 1.4, bodyFrequency: 86, bodyGain: 7.6, intake: 0.05, roughness: 0.12, overrun: 0.15, volume: 0.03,
   },
 };
 
