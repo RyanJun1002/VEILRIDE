@@ -502,46 +502,68 @@ type EngineSoundProfile = {
   ratios: [number, number, number];
   detunes: [number, number, number];
   voices: [number, number, number];
-  idle: number;
-  speedPitch: number;
-  throttlePitch: number;
+  idleRpm: number;
+  redlineRpm: number;
+  cylinders: number;
+  shiftKmh: number[];
   filterBase: number;
-  filterSpeed: number;
-  filterThrottle: number;
+  filterRpm: number;
   resonance: number;
+  bodyFrequency: number;
+  bodyGain: number;
+  intake: number;
+  roughness: number;
+  overrun: number;
   volume: number;
 };
 
 const ENGINE_SOUNDS: Record<CarModelId, EngineSoundProfile> = {
   'mist-gt': {
     waves: ['sawtooth', 'triangle', 'sine'], ratios: [1, 0.5, 1.5], detunes: [-5, 6, 2], voices: [0.5, 0.34, 0.16],
-    idle: 50, speedPitch: 4.15, throttlePitch: 31, filterBase: 280, filterSpeed: 17, filterThrottle: 330, resonance: 3.1, volume: 0.033,
+    idleRpm: 780, redlineRpm: 6800, cylinders: 6, shiftKmh: [38, 70, 108, 152, 205, 260],
+    filterBase: 360, filterRpm: 0.16, resonance: 2.7, bodyFrequency: 92, bodyGain: 5.5, intake: 0.42, roughness: 0.16, overrun: 0.22, volume: 0.031,
   },
   'apex-r': {
     waves: ['sawtooth', 'square', 'triangle'], ratios: [1.25, 2.0, 0.625], detunes: [-3, 4, 8], voices: [0.46, 0.16, 0.38],
-    idle: 66, speedPitch: 5.8, throttlePitch: 52, filterBase: 430, filterSpeed: 25, filterThrottle: 640, resonance: 4.5, volume: 0.03,
+    idleRpm: 920, redlineRpm: 8400, cylinders: 8, shiftKmh: [44, 82, 126, 178, 235, 305],
+    filterBase: 520, filterRpm: 0.2, resonance: 3.9, bodyFrequency: 108, bodyGain: 6.2, intake: 0.65, roughness: 0.2, overrun: 0.72, volume: 0.029,
   },
   'ridge-x': {
     waves: ['square', 'triangle', 'sine'], ratios: [0.82, 1.64, 0.41], detunes: [-12, 9, -4], voices: [0.46, 0.25, 0.42],
-    idle: 45, speedPitch: 3.65, throttlePitch: 28, filterBase: 220, filterSpeed: 14, filterThrottle: 280, resonance: 2.2, volume: 0.037,
+    idleRpm: 840, redlineRpm: 6400, cylinders: 4, shiftKmh: [30, 58, 91, 128, 170, 215],
+    filterBase: 310, filterRpm: 0.14, resonance: 2.1, bodyFrequency: 78, bodyGain: 6.8, intake: 0.38, roughness: 0.34, overrun: 0.28, volume: 0.036,
   },
   'touring-s': {
     waves: ['sawtooth', 'sine', 'triangle'], ratios: [0.75, 0.375, 1.5], detunes: [-7, 5, 3], voices: [0.48, 0.4, 0.2],
-    idle: 42, speedPitch: 3.45, throttlePitch: 25, filterBase: 245, filterSpeed: 15, filterThrottle: 300, resonance: 2.7, volume: 0.035,
+    idleRpm: 720, redlineRpm: 6200, cylinders: 6, shiftKmh: [35, 66, 101, 142, 190, 245],
+    filterBase: 330, filterRpm: 0.14, resonance: 2.4, bodyFrequency: 86, bodyGain: 5.2, intake: 0.32, roughness: 0.12, overrun: 0.16, volume: 0.032,
   },
   'trail-pickup': {
     waves: ['sawtooth', 'square', 'sine'], ratios: [0.62, 1.24, 0.31], detunes: [-11, 8, -2], voices: [0.48, 0.2, 0.48],
-    idle: 38, speedPitch: 3.05, throttlePitch: 24, filterBase: 190, filterSpeed: 12, filterThrottle: 255, resonance: 2.4, volume: 0.042,
+    idleRpm: 650, redlineRpm: 5200, cylinders: 8, shiftKmh: [27, 52, 82, 116, 154, 195],
+    filterBase: 260, filterRpm: 0.12, resonance: 2.2, bodyFrequency: 66, bodyGain: 8.5, intake: 0.48, roughness: 0.3, overrun: 0.44, volume: 0.039,
   },
   'metro-bus': {
     waves: ['square', 'sawtooth', 'sine'], ratios: [0.5, 1, 0.25], detunes: [-14, 6, -5], voices: [0.34, 0.34, 0.55],
-    idle: 31, speedPitch: 2.5, throttlePitch: 18, filterBase: 150, filterSpeed: 9, filterThrottle: 210, resonance: 1.8, volume: 0.046,
+    idleRpm: 580, redlineRpm: 2800, cylinders: 6, shiftKmh: [17, 32, 50, 70, 90, 112],
+    filterBase: 190, filterRpm: 0.1, resonance: 1.6, bodyFrequency: 52, bodyGain: 9.5, intake: 0.55, roughness: 0.48, overrun: 0.12, volume: 0.043,
   },
   'storm-moto': {
     waves: ['sawtooth', 'square', 'triangle'], ratios: [1.55, 3.1, 0.775], detunes: [-2, 3, 7], voices: [0.45, 0.14, 0.32],
-    idle: 82, speedPitch: 7.2, throttlePitch: 70, filterBase: 520, filterSpeed: 31, filterThrottle: 820, resonance: 5.2, volume: 0.028,
+    idleRpm: 1350, redlineRpm: 13200, cylinders: 4, shiftKmh: [48, 86, 128, 174, 225, 285],
+    filterBase: 680, filterRpm: 0.24, resonance: 4.6, bodyFrequency: 122, bodyGain: 3.8, intake: 0.82, roughness: 0.13, overrun: 0.58, volume: 0.026,
   },
 };
+
+function makeSaturationCurve(amount: number) {
+  const samples = 512;
+  const curve = new Float32Array(samples);
+  for (let i = 0; i < samples; i++) {
+    const x = (i * 2) / (samples - 1) - 1;
+    curve[i] = ((1 + amount) * x) / (1 + amount * Math.abs(x));
+  }
+  return curve;
+}
 
 class EngineAudio {
   private context = new AudioContext();
@@ -555,53 +577,172 @@ class EngineAudio {
     this.context.createGain(),
     this.context.createGain(),
   ];
+  private engineBus = this.context.createGain();
   private gain = this.context.createGain();
+  private saturation = this.context.createWaveShaper();
   private filter = this.context.createBiquadFilter();
+  private bodyFilter = this.context.createBiquadFilter();
+  private compressor = this.context.createDynamicsCompressor();
+  private noiseSource = this.context.createBufferSource();
+  private noiseFilter = this.context.createBiquadFilter();
+  private noiseGain = this.context.createGain();
+  private noiseBuffer = this.makeNoiseBuffer();
   private profile = ENGINE_SOUNDS['mist-gt'];
+  private smoothedRpm = this.profile.idleRpm;
+  private previousThrottle = 0;
+  private popCooldown = 0;
 
   constructor(model: CarModelId) {
     this.filter.type = 'lowpass';
+    this.bodyFilter.type = 'peaking';
+    this.noiseFilter.type = 'bandpass';
     this.gain.gain.value = 0.0001;
+    this.engineBus.gain.value = 0.72;
+    this.noiseGain.gain.value = 0.0001;
+    this.saturation.oversample = '2x';
+    this.compressor.threshold.value = -20;
+    this.compressor.knee.value = 18;
+    this.compressor.ratio.value = 4.5;
+    this.compressor.attack.value = 0.004;
+    this.compressor.release.value = 0.13;
     this.oscillators.forEach((oscillator, index) => {
-      oscillator.connect(this.voiceGains[index]).connect(this.filter);
+      oscillator.connect(this.voiceGains[index]).connect(this.engineBus);
       oscillator.start();
     });
-    this.filter.connect(this.gain).connect(this.context.destination);
+    this.engineBus
+      .connect(this.saturation)
+      .connect(this.filter)
+      .connect(this.bodyFilter)
+      .connect(this.compressor);
+    this.noiseSource.buffer = this.noiseBuffer;
+    this.noiseSource.loop = true;
+    this.noiseSource.connect(this.noiseFilter).connect(this.noiseGain).connect(this.compressor);
+    this.noiseSource.start();
+    this.compressor.connect(this.gain).connect(this.context.destination);
     this.setModel(model);
+  }
+
+  private makeNoiseBuffer() {
+    const length = Math.floor(this.context.sampleRate * 2);
+    const buffer = this.context.createBuffer(1, length, this.context.sampleRate);
+    const channel = buffer.getChannelData(0);
+    let filtered = 0;
+    for (let i = 0; i < length; i++) {
+      const white = Math.random() * 2 - 1;
+      filtered = filtered * 0.86 + white * 0.14;
+      channel[i] = white * 0.28 + filtered * 0.72;
+    }
+    return buffer;
   }
 
   setModel(model: CarModelId) {
     this.profile = ENGINE_SOUNDS[model];
     const now = this.context.currentTime;
+    this.smoothedRpm = Math.max(this.profile.idleRpm, Math.min(this.smoothedRpm, this.profile.redlineRpm));
     this.oscillators.forEach((oscillator, index) => {
       oscillator.type = this.profile.waves[index];
       oscillator.detune.setTargetAtTime(this.profile.detunes[index], now, 0.08);
       this.voiceGains[index].gain.setTargetAtTime(this.profile.voices[index], now, 0.08);
     });
     this.filter.Q.setTargetAtTime(this.profile.resonance, now, 0.08);
+    this.bodyFilter.frequency.setTargetAtTime(this.profile.bodyFrequency, now, 0.08);
+    this.bodyFilter.Q.setTargetAtTime(1.1 + this.profile.roughness * 1.6, now, 0.08);
+    this.bodyFilter.gain.setTargetAtTime(this.profile.bodyGain, now, 0.08);
+    this.noiseFilter.Q.setTargetAtTime(0.75 + this.profile.intake * 1.5, now, 0.08);
+    this.saturation.curve = makeSaturationCurve(1.4 + this.profile.roughness * 6);
   }
 
   start() {
-    this.context.resume();
+    void this.context.resume();
     this.gain.gain.setTargetAtTime(this.profile.volume, this.context.currentTime, 0.3);
   }
 
   stop() {
     this.gain.gain.setTargetAtTime(0.0001, this.context.currentTime, 0.12);
+    this.previousThrottle = 0;
   }
 
   update(speed: number, throttle: number) {
     const absoluteSpeed = Math.abs(speed);
-    const baseFrequency = this.profile.idle + absoluteSpeed * this.profile.speedPitch + throttle * this.profile.throttlePitch;
+    const kmh = absoluteSpeed * 3.6;
+    let gear = this.profile.shiftKmh.findIndex(limit => kmh < limit);
+    if (gear < 0) gear = this.profile.shiftKmh.length - 1;
+    const lowerLimit = gear === 0 ? 0 : this.profile.shiftKmh[gear - 1];
+    const upperLimit = this.profile.shiftKmh[gear] ?? lowerLimit + 60;
+    const gearProgress = Math.max(0, Math.min(1, (kmh - lowerLimit) / Math.max(1, upperLimit - lowerLimit)));
+    const rpmRange = this.profile.redlineRpm - this.profile.idleRpm;
+    const rollingRpm = this.profile.idleRpm + rpmRange * (0.28 + gearProgress * 0.66);
+    const launchRpm = this.profile.idleRpm + throttle * Math.min(1500, rpmRange * 0.24);
+    const targetRpm = kmh < 2
+      ? launchRpm
+      : Math.min(this.profile.redlineRpm, rollingRpm + throttle * rpmRange * 0.06);
+    const rpmResponse = throttle > this.previousThrottle ? 0.16 : 0.09;
+    this.smoothedRpm += (targetRpm - this.smoothedRpm) * rpmResponse;
+
+    const rpmRatio = Math.max(0, Math.min(1, (this.smoothedRpm - this.profile.idleRpm) / rpmRange));
+    const firingFrequency = (this.smoothedRpm / 60) * (this.profile.cylinders / 2);
+    const now = this.context.currentTime;
     this.oscillators.forEach((oscillator, index) => {
-      oscillator.frequency.setTargetAtTime(baseFrequency * this.profile.ratios[index], this.context.currentTime, 0.045 + index * 0.01);
+      oscillator.frequency.setTargetAtTime(
+        firingFrequency * this.profile.ratios[index],
+        now,
+        0.035 + index * 0.008,
+      );
     });
     this.filter.frequency.setTargetAtTime(
-      this.profile.filterBase + absoluteSpeed * this.profile.filterSpeed + throttle * this.profile.filterThrottle,
-      this.context.currentTime,
-      0.075,
+      this.profile.filterBase + this.smoothedRpm * this.profile.filterRpm + throttle * 520,
+      now,
+      0.06,
     );
-    this.gain.gain.setTargetAtTime(this.profile.volume + absoluteSpeed * 0.00055, this.context.currentTime, 0.09);
+    this.noiseFilter.frequency.setTargetAtTime(520 + this.smoothedRpm * 0.31, now, 0.055);
+    this.noiseGain.gain.setTargetAtTime(
+      0.018 + this.profile.intake * (throttle * 0.13 + rpmRatio * 0.045),
+      now,
+      0.045,
+    );
+    this.engineBus.gain.setTargetAtTime(
+      0.58 + throttle * 0.26 + rpmRatio * 0.12,
+      now,
+      0.05,
+    );
+    this.gain.gain.setTargetAtTime(
+      this.profile.volume * (0.82 + throttle * 0.28 + rpmRatio * 0.16),
+      now,
+      0.07,
+    );
+
+    if (
+      this.previousThrottle > 0.62
+      && throttle < 0.18
+      && kmh > 24
+      && now >= this.popCooldown
+      && this.profile.overrun > 0.15
+    ) {
+      this.triggerOverrunPop(now, firingFrequency);
+      this.popCooldown = now + 0.22 + Math.random() * 0.18;
+    }
+    this.previousThrottle = throttle;
+  }
+
+  private triggerOverrunPop(now: number, firingFrequency: number) {
+    const source = this.context.createBufferSource();
+    const filter = this.context.createBiquadFilter();
+    const popGain = this.context.createGain();
+    source.buffer = this.noiseBuffer;
+    filter.type = 'bandpass';
+    filter.frequency.value = Math.min(520, 110 + firingFrequency * 1.4);
+    filter.Q.value = 1.6 + this.profile.roughness * 2.5;
+    popGain.gain.setValueAtTime(0.0001, now);
+    popGain.gain.exponentialRampToValueAtTime(0.28 * this.profile.overrun, now + 0.008);
+    popGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
+    source.connect(filter).connect(popGain).connect(this.compressor);
+    source.start(now, Math.random() * 1.6, 0.13);
+    source.stop(now + 0.14);
+    source.onended = () => {
+      source.disconnect();
+      filter.disconnect();
+      popGain.disconnect();
+    };
   }
 }
 
