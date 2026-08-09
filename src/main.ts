@@ -498,10 +498,11 @@ addEventListener('beforeunload', () => {
 });
 
 type EngineSoundProfile = {
-  waves: [OscillatorType, OscillatorType, OscillatorType];
   ratios: [number, number, number];
   detunes: [number, number, number];
   voices: [number, number, number];
+  harmonicRolloff: number;
+  toneCut: number;
   idleRpm: number;
   redlineRpm: number;
   cylinders: number;
@@ -519,39 +520,39 @@ type EngineSoundProfile = {
 
 const ENGINE_SOUNDS: Record<CarModelId, EngineSoundProfile> = {
   'mist-gt': {
-    waves: ['sawtooth', 'triangle', 'sine'], ratios: [1, 0.5, 1.5], detunes: [-5, 6, 2], voices: [0.5, 0.34, 0.16],
+    ratios: [1, 0.5, 1.42], detunes: [-5, 6, 2], voices: [0.48, 0.36, 0.12], harmonicRolloff: 1.9, toneCut: -5.5,
     idleRpm: 780, redlineRpm: 6800, cylinders: 6, shiftKmh: [38, 70, 108, 152, 205, 260],
-    filterBase: 360, filterRpm: 0.16, resonance: 2.7, bodyFrequency: 92, bodyGain: 5.5, intake: 0.42, roughness: 0.16, overrun: 0.22, volume: 0.031,
+    filterBase: 320, filterRpm: 0.13, resonance: 2.2, bodyFrequency: 92, bodyGain: 5.5, intake: 0.38, roughness: 0.16, overrun: 0.18, volume: 0.031,
   },
   'apex-r': {
-    waves: ['sawtooth', 'square', 'triangle'], ratios: [1.25, 2.0, 0.625], detunes: [-3, 4, 8], voices: [0.46, 0.16, 0.38],
+    ratios: [1.12, 1.82, 0.56], detunes: [-3, 4, 8], voices: [0.44, 0.09, 0.38], harmonicRolloff: 1.82, toneCut: -6.5,
     idleRpm: 920, redlineRpm: 8400, cylinders: 8, shiftKmh: [44, 82, 126, 178, 235, 305],
-    filterBase: 520, filterRpm: 0.2, resonance: 3.9, bodyFrequency: 108, bodyGain: 6.2, intake: 0.65, roughness: 0.2, overrun: 0.72, volume: 0.029,
+    filterBase: 420, filterRpm: 0.15, resonance: 2.8, bodyFrequency: 108, bodyGain: 6.2, intake: 0.52, roughness: 0.2, overrun: 0.52, volume: 0.029,
   },
   'ridge-x': {
-    waves: ['square', 'triangle', 'sine'], ratios: [0.82, 1.64, 0.41], detunes: [-12, 9, -4], voices: [0.46, 0.25, 0.42],
+    ratios: [0.82, 1.52, 0.41], detunes: [-12, 9, -4], voices: [0.44, 0.16, 0.43], harmonicRolloff: 2.08, toneCut: -7,
     idleRpm: 840, redlineRpm: 6400, cylinders: 4, shiftKmh: [30, 58, 91, 128, 170, 215],
-    filterBase: 310, filterRpm: 0.14, resonance: 2.1, bodyFrequency: 78, bodyGain: 6.8, intake: 0.38, roughness: 0.34, overrun: 0.28, volume: 0.036,
+    filterBase: 290, filterRpm: 0.11, resonance: 1.8, bodyFrequency: 78, bodyGain: 6.8, intake: 0.31, roughness: 0.34, overrun: 0.22, volume: 0.036,
   },
   'touring-s': {
-    waves: ['sawtooth', 'sine', 'triangle'], ratios: [0.75, 0.375, 1.5], detunes: [-7, 5, 3], voices: [0.48, 0.4, 0.2],
+    ratios: [0.75, 0.375, 1.38], detunes: [-7, 5, 3], voices: [0.46, 0.42, 0.14], harmonicRolloff: 2.2, toneCut: -6,
     idleRpm: 720, redlineRpm: 6200, cylinders: 6, shiftKmh: [35, 66, 101, 142, 190, 245],
-    filterBase: 330, filterRpm: 0.14, resonance: 2.4, bodyFrequency: 86, bodyGain: 5.2, intake: 0.32, roughness: 0.12, overrun: 0.16, volume: 0.032,
+    filterBase: 300, filterRpm: 0.11, resonance: 1.9, bodyFrequency: 86, bodyGain: 5.2, intake: 0.26, roughness: 0.12, overrun: 0.12, volume: 0.032,
   },
   'trail-pickup': {
-    waves: ['sawtooth', 'square', 'sine'], ratios: [0.62, 1.24, 0.31], detunes: [-11, 8, -2], voices: [0.48, 0.2, 0.48],
+    ratios: [0.62, 1.18, 0.31], detunes: [-11, 8, -2], voices: [0.46, 0.12, 0.5], harmonicRolloff: 2.05, toneCut: -7.5,
     idleRpm: 650, redlineRpm: 5200, cylinders: 8, shiftKmh: [27, 52, 82, 116, 154, 195],
-    filterBase: 260, filterRpm: 0.12, resonance: 2.2, bodyFrequency: 66, bodyGain: 8.5, intake: 0.48, roughness: 0.3, overrun: 0.44, volume: 0.039,
+    filterBase: 240, filterRpm: 0.1, resonance: 1.8, bodyFrequency: 66, bodyGain: 8.5, intake: 0.36, roughness: 0.3, overrun: 0.32, volume: 0.039,
   },
   'metro-bus': {
-    waves: ['square', 'sawtooth', 'sine'], ratios: [0.5, 1, 0.25], detunes: [-14, 6, -5], voices: [0.34, 0.34, 0.55],
+    ratios: [0.5, 1, 0.25], detunes: [-14, 6, -5], voices: [0.3, 0.22, 0.58], harmonicRolloff: 2.38, toneCut: -8.5,
     idleRpm: 580, redlineRpm: 2800, cylinders: 6, shiftKmh: [17, 32, 50, 70, 90, 112],
-    filterBase: 190, filterRpm: 0.1, resonance: 1.6, bodyFrequency: 52, bodyGain: 9.5, intake: 0.55, roughness: 0.48, overrun: 0.12, volume: 0.043,
+    filterBase: 170, filterRpm: 0.08, resonance: 1.3, bodyFrequency: 52, bodyGain: 9.5, intake: 0.38, roughness: 0.48, overrun: 0.08, volume: 0.043,
   },
   'storm-moto': {
-    waves: ['sawtooth', 'square', 'triangle'], ratios: [1.55, 3.1, 0.775], detunes: [-2, 3, 7], voices: [0.45, 0.14, 0.32],
+    ratios: [1.32, 2.35, 0.66], detunes: [-2, 3, 7], voices: [0.42, 0.06, 0.37], harmonicRolloff: 1.95, toneCut: -9,
     idleRpm: 1350, redlineRpm: 13200, cylinders: 4, shiftKmh: [48, 86, 128, 174, 225, 285],
-    filterBase: 680, filterRpm: 0.24, resonance: 4.6, bodyFrequency: 122, bodyGain: 3.8, intake: 0.82, roughness: 0.13, overrun: 0.58, volume: 0.026,
+    filterBase: 520, filterRpm: 0.16, resonance: 3.1, bodyFrequency: 122, bodyGain: 3.8, intake: 0.64, roughness: 0.13, overrun: 0.42, volume: 0.026,
   },
 };
 
@@ -582,6 +583,7 @@ class EngineAudio {
   private saturation = this.context.createWaveShaper();
   private filter = this.context.createBiquadFilter();
   private bodyFilter = this.context.createBiquadFilter();
+  private toneFilter = this.context.createBiquadFilter();
   private compressor = this.context.createDynamicsCompressor();
   private noiseSource = this.context.createBufferSource();
   private noiseFilter = this.context.createBiquadFilter();
@@ -595,6 +597,8 @@ class EngineAudio {
   constructor(model: CarModelId) {
     this.filter.type = 'lowpass';
     this.bodyFilter.type = 'peaking';
+    this.toneFilter.type = 'highshelf';
+    this.toneFilter.frequency.value = 1800;
     this.noiseFilter.type = 'bandpass';
     this.gain.gain.value = 0.0001;
     this.engineBus.gain.value = 0.72;
@@ -613,6 +617,7 @@ class EngineAudio {
       .connect(this.saturation)
       .connect(this.filter)
       .connect(this.bodyFilter)
+      .connect(this.toneFilter)
       .connect(this.compressor);
     this.noiseSource.buffer = this.noiseBuffer;
     this.noiseSource.loop = true;
@@ -635,12 +640,26 @@ class EngineAudio {
     return buffer;
   }
 
+  private makeEngineWave(voiceIndex: number) {
+    const harmonicCount = 14;
+    const real = new Float32Array(harmonicCount + 1);
+    const imaginary = new Float32Array(harmonicCount + 1);
+    const rolloff = this.profile.harmonicRolloff + (voiceIndex === 1 ? 0.72 : voiceIndex * 0.18);
+    for (let harmonic = 1; harmonic <= harmonicCount; harmonic++) {
+      const amplitude = 1 / Math.pow(harmonic, rolloff);
+      const phase = harmonic * (0.37 + this.profile.roughness * 0.16) + voiceIndex * 1.1;
+      real[harmonic] = Math.cos(phase) * amplitude;
+      imaginary[harmonic] = Math.sin(phase) * amplitude;
+    }
+    return this.context.createPeriodicWave(real, imaginary, { disableNormalization: false });
+  }
+
   setModel(model: CarModelId) {
     this.profile = ENGINE_SOUNDS[model];
     const now = this.context.currentTime;
     this.smoothedRpm = Math.max(this.profile.idleRpm, Math.min(this.smoothedRpm, this.profile.redlineRpm));
     this.oscillators.forEach((oscillator, index) => {
-      oscillator.type = this.profile.waves[index];
+      oscillator.setPeriodicWave(this.makeEngineWave(index));
       oscillator.detune.setTargetAtTime(this.profile.detunes[index], now, 0.08);
       this.voiceGains[index].gain.setTargetAtTime(this.profile.voices[index], now, 0.08);
     });
@@ -648,8 +667,9 @@ class EngineAudio {
     this.bodyFilter.frequency.setTargetAtTime(this.profile.bodyFrequency, now, 0.08);
     this.bodyFilter.Q.setTargetAtTime(1.1 + this.profile.roughness * 1.6, now, 0.08);
     this.bodyFilter.gain.setTargetAtTime(this.profile.bodyGain, now, 0.08);
-    this.noiseFilter.Q.setTargetAtTime(0.75 + this.profile.intake * 1.5, now, 0.08);
-    this.saturation.curve = makeSaturationCurve(1.4 + this.profile.roughness * 6);
+    this.toneFilter.gain.setTargetAtTime(this.profile.toneCut, now, 0.08);
+    this.noiseFilter.Q.setTargetAtTime(0.55 + this.profile.intake * 0.7, now, 0.08);
+    this.saturation.curve = makeSaturationCurve(0.72 + this.profile.roughness * 2.6);
   }
 
   start() {
@@ -688,15 +708,27 @@ class EngineAudio {
         now,
         0.035 + index * 0.008,
       );
+      const combustionWobble = Math.sin(now * (2.6 + index * 0.7) + index * 1.4)
+        * this.profile.roughness
+        * 5;
+      oscillator.detune.setTargetAtTime(
+        this.profile.detunes[index] + combustionWobble,
+        now,
+        0.08,
+      );
     });
     this.filter.frequency.setTargetAtTime(
-      this.profile.filterBase + this.smoothedRpm * this.profile.filterRpm + throttle * 520,
+      Math.min(3200, this.profile.filterBase + this.smoothedRpm * this.profile.filterRpm + throttle * 360),
       now,
       0.06,
     );
-    this.noiseFilter.frequency.setTargetAtTime(520 + this.smoothedRpm * 0.31, now, 0.055);
+    this.noiseFilter.frequency.setTargetAtTime(
+      Math.min(2600, 380 + this.smoothedRpm * 0.18),
+      now,
+      0.065,
+    );
     this.noiseGain.gain.setTargetAtTime(
-      0.018 + this.profile.intake * (throttle * 0.13 + rpmRatio * 0.045),
+      0.01 + this.profile.intake * (throttle * 0.075 + rpmRatio * 0.026),
       now,
       0.045,
     );
@@ -730,14 +762,14 @@ class EngineAudio {
     const popGain = this.context.createGain();
     source.buffer = this.noiseBuffer;
     filter.type = 'bandpass';
-    filter.frequency.value = Math.min(520, 110 + firingFrequency * 1.4);
-    filter.Q.value = 1.6 + this.profile.roughness * 2.5;
+    filter.frequency.value = Math.min(360, 92 + firingFrequency * 0.82);
+    filter.Q.value = 0.75 + this.profile.roughness * 1.2;
     popGain.gain.setValueAtTime(0.0001, now);
-    popGain.gain.exponentialRampToValueAtTime(0.28 * this.profile.overrun, now + 0.008);
-    popGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
+    popGain.gain.exponentialRampToValueAtTime(0.17 * this.profile.overrun, now + 0.012);
+    popGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
     source.connect(filter).connect(popGain).connect(this.compressor);
-    source.start(now, Math.random() * 1.6, 0.13);
-    source.stop(now + 0.14);
+    source.start(now, Math.random() * 1.6, 0.15);
+    source.stop(now + 0.16);
     source.onended = () => {
       source.disconnect();
       filter.disconnect();
