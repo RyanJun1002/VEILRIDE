@@ -2020,15 +2020,18 @@ export class GameRenderer {
           ? 'autumn-leaves'
           : this.seasonIndex === 3
             ? 'snow-ground'
-            : null)
+            : 'grass-ground')
       : null;
     const seasonalGround = seasonalGroundPrefix
       ? this.loadEnvironmentSurface(seasonalGroundPrefix, 70, 40)
       : null;
+    const seasonalGroundColor = seasonalGroundPrefix === 'grass-ground'
+      ? 0x91ad73
+      : 0xffffff;
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(250, CHUNK_LENGTH),
       worldMaterial({
-        color: desertGround || seasonalGround ? 0xffffff : groundColor,
+        color: desertGround ? 0xffffff : seasonalGround ? seasonalGroundColor : groundColor,
         map: desertGround ? this.sandTextures.diffuse : seasonalGround?.diffuse,
         normalMap: desertGround ? this.sandTextures.normal : seasonalGround?.normal,
         normalScale: desertGround && this.sandTextures.normal

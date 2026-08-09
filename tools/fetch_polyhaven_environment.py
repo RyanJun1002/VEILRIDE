@@ -26,6 +26,7 @@ SURFACES = (
     Surface("marble_cliff_05", "mountain-cliff"),
     Surface("snow_01", "snow-ground"),
     Surface("forest_leaves_04", "autumn-leaves"),
+    Surface("leafy_grass", "grass-ground"),
     Surface("grass_bermuda_01", "bermuda-grass"),
     Surface("red_brick", "red-brick"),
     Surface("stone_wall_05", "stone-wall"),
