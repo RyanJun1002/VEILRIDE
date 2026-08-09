@@ -31,6 +31,15 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .garage-card, .online-card { min-height: 184px; padding: 15px; border: 1px solid rgba(255,255,255,.14); background: rgba(10,17,15,.64); backdrop-filter: blur(18px); box-shadow: 0 18px 48px rgba(0,0,0,.2); }
 .panel-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 11px; font: 700 11px/1 var(--font-ui); letter-spacing: .2em; }
 .panel-title small { color: var(--orange); font-size: 8px; }
+.panel-title__status { min-width: 0; display: flex; align-items: center; justify-content: flex-end; gap: 9px; }
+.panel-title__status > small { max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+.online-presence { display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.035); color: rgba(255,255,255,.72); letter-spacing: .06em; }
+.online-presence i { width: 5px; height: 5px; border-radius: 50%; background: #d8a64b; box-shadow: 0 0 8px rgba(216,166,75,.65); }
+.online-presence strong { min-width: 10px; color: var(--cream); font: 800 9px/1 var(--font-ui); text-align: right; }
+.online-presence em { color: rgba(255,255,255,.48); font: normal 700 7px/1 var(--font-ui); }
+.online-presence.is-live i { background: #62e2b7; box-shadow: 0 0 8px #62e2b7; }
+.online-presence.is-connecting i { animation: presence-pulse 1.2s ease-in-out infinite; }
+@keyframes presence-pulse { 50% { opacity: .3; } }
 .car-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; max-height: 106px; overflow-y: auto; padding-right: 3px; scrollbar-width: thin; scrollbar-color: rgba(242,93,59,.7) rgba(255,255,255,.05); }
 .car-picker button, .online-actions button, .join-row button { min-height: 48px; padding: 8px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.025); cursor: pointer; text-align: left; transition: .2s; }
 .car-picker button:hover, .car-picker button.is-selected, .online-actions button:hover, .online-actions button.is-selected { border-color: rgba(242,93,59,.8); background: rgba(242,93,59,.12); }

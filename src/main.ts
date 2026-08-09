@@ -11,6 +11,7 @@ import {
   type CarModelId,
 } from './cars';
 import { MultiplayerSession, cleanRoomCode } from './multiplayer';
+import { PresenceSession } from './presence';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
 const menu = document.querySelector<HTMLElement>('#menu')!;
@@ -43,6 +44,9 @@ const trafficValue = document.querySelector<HTMLElement>('#trafficValue')!;
 const languageSelect = document.querySelector<HTMLSelectElement>('#languageSelect')!;
 const languageLabel = document.querySelector<HTMLElement>('#languageLabel')!;
 const settingsState = document.querySelector<HTMLElement>('#settingsState')!;
+const onlinePresence = document.querySelector<HTMLElement>('#onlinePresence')!;
+const onlineCount = document.querySelector<HTMLElement>('#onlineCount')!;
+const onlineLabel = document.querySelector<HTMLElement>('#onlineLabel')!;
 
 type Language = 'ko' | 'en';
 
@@ -61,6 +65,7 @@ const UI_COPY = {
     newJourney: '새로운 여정을 시작합니다', collision: '충돌 — 리듬을 되찾으세요',
     trafficOnToast: 'NPC 차량을 켰습니다', trafficOffToast: 'NPC 차량을 껐습니다', time: '시간대', season: '계절',
     roomCreateFailed: '방 생성에 실패했습니다.', roomJoinFailed: '방 참가에 실패했습니다.', roomCopied: '복사됨',
+    online: '온라인', onlineConnecting: '온라인 인원 연결 중', onlineTitle: (count: number) => `현재 ${count}명 온라인`,
   },
   en: {
     tagline: 'A mist-covered ridge. The engine note. And corners without end.',
@@ -76,6 +81,7 @@ const UI_COPY = {
     newJourney: 'A new journey begins', collision: 'COLLISION — FIND YOUR RHYTHM',
     trafficOnToast: 'NPC traffic enabled', trafficOffToast: 'NPC traffic disabled', time: 'TIME', season: 'SEASON',
     roomCreateFailed: 'Could not create the room.', roomJoinFailed: 'Could not join the room.', roomCopied: 'COPIED',
+    online: 'ONLINE', onlineConnecting: 'Connecting online count', onlineTitle: (count: number) => `${count} player${count === 1 ? '' : 's'} online`,
   },
 } as const;
 
@@ -89,6 +95,7 @@ function loadTrafficEnabled() {
 
 let language = loadLanguage();
 let lastNetworkMessage = '';
+let currentOnlineCount: number | null = null;
 
 function loadCustomization(): CarCustomization {
   try {
@@ -118,6 +125,7 @@ view.setPlayerCustomization(customization);
 view.setTraffic(simulation.traffic);
 view.setTrafficEnabled(simulation.trafficEnabled);
 const multiplayer = new MultiplayerSession();
+const presence = new PresenceSession();
 
 const keys = new Set<string>();
 const touch = new Set<string>();
@@ -166,6 +174,17 @@ function localizeError(error: unknown, fallback: string) {
   return fallback;
 }
 
+function updatePresenceUi(count: number | null) {
+  currentOnlineCount = count;
+  const copy = UI_COPY[language];
+  onlineCount.textContent = count === null ? '--' : count.toLocaleString(language);
+  onlineLabel.textContent = copy.online;
+  onlinePresence.classList.toggle('is-live', count !== null);
+  onlinePresence.classList.toggle('is-connecting', count === null);
+  onlinePresence.title = count === null ? copy.onlineConnecting : copy.onlineTitle(count);
+  onlinePresence.setAttribute('aria-label', onlinePresence.title);
+}
+
 function applyLanguage() {
   const copy = UI_COPY[language];
   document.documentElement.lang = language;
@@ -184,6 +203,7 @@ function applyLanguage() {
   trafficValue.textContent = simulation.trafficEnabled ? copy.on : copy.off;
   languageLabel.textContent = copy.language;
   settingsState.textContent = `TRAFFIC ${simulation.trafficEnabled ? 'ON' : 'OFF'} · ${language === 'ko' ? '한국어' : 'ENGLISH'}`;
+  updatePresenceUi(currentOnlineCount);
   document.querySelectorAll<HTMLElement>('.menu__controls span').forEach((label, index) => {
     label.textContent = copy.controls[index] ?? label.textContent;
   });
@@ -359,7 +379,13 @@ roomCodeInput.addEventListener('keydown', event => {
 });
 roomCodeInput.addEventListener('keyup', event => event.stopPropagation());
 
-addEventListener('beforeunload', () => multiplayer.disconnect());
+presence.onCount = updatePresenceUi;
+window.setTimeout(() => presence.start(), view.lowPower ? 2400 : 900);
+
+addEventListener('beforeunload', () => {
+  presence.stop();
+  multiplayer.disconnect();
+});
 
 type EngineSoundProfile = {
   waves: [OscillatorType, OscillatorType, OscillatorType];

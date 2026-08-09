@@ -45,7 +45,15 @@
           </section>
 
           <section class="online-card">
-            <div class="panel-title"><span>MULTIPLAYER</span><small id="networkStatus">SOLO</small></div>
+            <div class="panel-title">
+              <span>MULTIPLAYER</span>
+              <div class="panel-title__status">
+                <span id="onlinePresence" class="online-presence is-connecting" title="온라인 인원 연결 중" aria-live="polite">
+                  <i></i><strong id="onlineCount">--</strong><em id="onlineLabel">온라인</em>
+                </span>
+                <small id="networkStatus">SOLO</small>
+              </div>
+            </div>
             <div class="online-actions">
               <button id="soloButton" class="is-selected">SOLO</button>
               <button id="hostButton">방 만들기</button>

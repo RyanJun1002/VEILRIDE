@@ -4,7 +4,7 @@ import type { CarCustomization } from './cars';
 
 let peerModulePromise: Promise<typeof import('peerjs')> | null = null;
 
-async function loadPeerConstructor() {
+export async function loadPeerConstructor() {
   peerModulePromise ??= import('peerjs');
   return (await peerModulePromise).default;
 }
@@ -33,7 +33,7 @@ type LeavePacket = {
 type NetworkPacket = StatePacket | LeavePacket;
 
 const ROOM_PREFIX = 'mistline-';
-const PEER_OPTIONS = {
+export const PEER_OPTIONS = {
   debug: 1 as const,
   config: {
     iceServers: [
