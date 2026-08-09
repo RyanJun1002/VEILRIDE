@@ -546,7 +546,7 @@ const ENGINE_SOUNDS: Record<CarModelId, EngineSoundProfile> = {
   },
   'metro-bus': {
     ratios: [0.5, 1, 0.25], detunes: [-14, 6, -5], voices: [0.3, 0.22, 0.58], harmonicRolloff: 2.38, toneCut: -8.5,
-    idleRpm: 580, redlineRpm: 2800, cylinders: 6, shiftKmh: [25, 45, 70, 100, 135, 175],
+    idleRpm: 580, redlineRpm: 2800, cylinders: 6, shiftKmh: [25, 45, 70, 100, 130, 160],
     filterBase: 170, filterRpm: 0.08, resonance: 1.3, bodyFrequency: 52, bodyGain: 9.5, intake: 0.38, roughness: 0.48, overrun: 0.08, volume: 0.043,
   },
   'storm-moto': {
