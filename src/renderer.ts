@@ -1943,9 +1943,14 @@ export class GameRenderer {
       ? season
       : WORLD_MAP_PALETTES[this.worldMap];
 
+    // Ground chunks must meet edge-to-edge. The former 3 m overlap placed two
+    // differently colored coplanar surfaces on top of each other, causing the
+    // horizontal z-fighting bands visible while driving.
+    const groundColor = new THREE.Color(palette.ground[0])
+      .lerp(new THREE.Color(palette.ground[1] ?? palette.ground[0]), 0.5);
     const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(250, CHUNK_LENGTH + 3, LOW_POWER_MODE ? 1 : 16, LOW_POWER_MODE ? 1 : 10),
-      worldMaterial({ color: palette.ground[((index % 2) + 2) % 2], roughness: 1 }),
+      new THREE.PlaneGeometry(250, CHUNK_LENGTH),
+      worldMaterial({ color: groundColor, roughness: 1 }),
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.set(centerX, -0.13, centerZ);
