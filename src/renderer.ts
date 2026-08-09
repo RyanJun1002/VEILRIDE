@@ -17,6 +17,39 @@ const TRAFFIC_RENDER_LIMIT = LOW_POWER_MODE ? (VERY_LOW_END ? 9 : 12) : Number.P
 const LOW_RENDER_SCALE = VERY_LOW_END ? 0.84 : 0.96;
 const LOW_POWER_PIXEL_RATIO = VERY_LOW_END ? 1 : Math.min(devicePixelRatio, 1.15);
 
+export type WorldMapId = 'mountain' | 'city' | 'desert';
+
+type WorldPalette = {
+  ground: number[];
+  shoulder: number;
+  leaves: number[];
+  hills: number[];
+  rock: number;
+};
+
+const WORLD_MAP_PALETTES: Record<Exclude<WorldMapId, 'mountain'>, WorldPalette> = {
+  city: {
+    ground: [0x4f5754, 0x555e5b],
+    shoulder: 0x8b9290,
+    leaves: [0x315844, 0x3f6b50, 0x55795b],
+    hills: [0x53605f, 0x667170],
+    rock: 0x6d7473,
+  },
+  desert: {
+    ground: [0xb78d57, 0xc59b61],
+    shoulder: 0xd1ae78,
+    leaves: [0x53613d, 0x68754a, 0x7d8553],
+    hills: [0x9f6341, 0xb6784d],
+    rock: 0x8d6449,
+  },
+};
+
+const WORLD_MAP_ATMOSPHERE: Record<WorldMapId, { sky: number; fog: number; blend: number; fogMultiplier: number }> = {
+  mountain: { sky: 0x9db4a5, fog: 0x9eb1a4, blend: 0, fogMultiplier: 1 },
+  city: { sky: 0x9eafb2, fog: 0x929f9e, blend: 0.32, fogMultiplier: 0.82 },
+  desert: { sky: 0xd9b77f, fog: 0xc9a06d, blend: 0.46, fogMultiplier: 0.68 },
+};
+
 function worldMaterial(parameters: THREE.MeshStandardMaterialParameters) {
   if (!LOW_POWER_MODE) return new THREE.MeshStandardMaterial(parameters);
   return new THREE.MeshLambertMaterial({
@@ -1677,6 +1710,7 @@ export class GameRenderer {
   private keyLight: THREE.DirectionalLight;
   private timeIndex = 1;
   private seasonIndex = 1;
+  private worldMap: WorldMapId = 'mountain';
   private readonly timeSettings = [
     { name: '새벽', sky: 0x74889a, fog: 0x8798a0, density: 0.0052, hemiSky: 0x9cb8c9, hemiGround: 0x343c43, hemi: 1.35, key: 0xffb37f, keyPower: 3.1, exposure: 0.88, sun: 0xffbd86, sunOffset: [-115, 28, -340] },
     { name: '낮', sky: 0x9db4a5, fog: 0x9eb1a4, density: 0.0047, hemiSky: 0xc8e1d4, hemiGround: 0x46513d, hemi: 2.1, key: 0xffd5a0, keyPower: 4.6, exposure: 1.08, sun: 0xffe1ac, sunOffset: [-145, 85, -360] },
@@ -1858,12 +1892,23 @@ export class GameRenderer {
     return this.seasonSettings[this.seasonIndex].name;
   }
 
+  setWorldMap(map: WorldMapId) {
+    if (this.worldMap === map) return;
+    this.worldMap = map;
+    for (const chunk of this.chunks) chunk.index = Number.NaN;
+    this.applyTimeSetting();
+  }
+
   private applyTimeSetting() {
     const setting = this.timeSettings[this.timeIndex];
-    (this.scene.background as THREE.Color).setHex(setting.sky);
+    const atmosphere = WORLD_MAP_ATMOSPHERE[this.worldMap];
+    const atmosphereBlend = this.timeIndex === 3 ? atmosphere.blend * 0.22 : atmosphere.blend;
+    (this.scene.background as THREE.Color)
+      .setHex(setting.sky)
+      .lerp(new THREE.Color(atmosphere.sky), atmosphereBlend);
     const fog = this.scene.fog as THREE.FogExp2;
-    fog.color.setHex(setting.fog);
-    fog.density = setting.density;
+    fog.color.setHex(setting.fog).lerp(new THREE.Color(atmosphere.fog), atmosphereBlend);
+    fog.density = setting.density * atmosphere.fogMultiplier;
     this.hemiLight.color.setHex(setting.hemiSky);
     this.hemiLight.groundColor.setHex(setting.hemiGround);
     this.hemiLight.intensity = setting.hemi;
@@ -1894,10 +1939,13 @@ export class GameRenderer {
     const centerX = roadCenter(centerZ);
     const rng = mulberry32(index * 9187 + 41);
     const season = this.seasonSettings[this.seasonIndex];
+    const palette: WorldPalette = this.worldMap === 'mountain'
+      ? season
+      : WORLD_MAP_PALETTES[this.worldMap];
 
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(250, CHUNK_LENGTH + 3, LOW_POWER_MODE ? 1 : 16, LOW_POWER_MODE ? 1 : 10),
-      worldMaterial({ color: season.ground[((index % 2) + 2) % 2], roughness: 1 }),
+      worldMaterial({ color: palette.ground[((index % 2) + 2) % 2], roughness: 1 }),
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.set(centerX, -0.13, centerZ);
@@ -1915,7 +1963,7 @@ export class GameRenderer {
     const postCount = LOW_POWER_MODE ? 20 : 36;
     const posts = new THREE.InstancedMesh(
       new THREE.BoxGeometry(0.13, 0.9, 0.13),
-      worldMaterial({ color: season.shoulder, roughness: 0.72 }),
+      worldMaterial({ color: palette.shoulder, roughness: 0.72 }),
       postCount,
     );
     const reflectors = new THREE.InstancedMesh(
@@ -1948,14 +1996,20 @@ export class GameRenderer {
 
     const trees: Array<{ x: number; z: number; scale: number; rotation: number; color: number }> = [];
     const rocks: Array<{ x: number; z: number; scale: number; rotation: number }> = [];
-    for (let i = 0; i < (LOW_POWER_MODE ? 22 : 40); i++) {
+    const propCount = this.worldMap === 'city'
+      ? (LOW_POWER_MODE ? 14 : 24)
+      : (LOW_POWER_MODE ? 22 : 40);
+    for (let i = 0; i < propCount; i++) {
       const z = startZ - rng() * CHUNK_LENGTH;
       const side = rng() < 0.5 ? -1 : 1;
       const dist = 9 + rng() * 72;
       const x = roadCenter(z) + side * dist;
-      if (rng() < 0.78) {
-        trees.push({ x, z, scale: 0.72 + rng() * 1.55, rotation: rng() * Math.PI, color: Math.floor(rng() * season.leaves.length) });
-      } else {
+      const propRoll = rng();
+      if (this.worldMap === 'mountain' && propRoll < 0.78) {
+        trees.push({ x, z, scale: 0.72 + rng() * 1.55, rotation: rng() * Math.PI, color: Math.floor(rng() * palette.leaves.length) });
+      } else if (this.worldMap === 'city' && propRoll < 0.42) {
+        trees.push({ x, z, scale: 0.55 + rng() * 0.7, rotation: rng() * Math.PI, color: Math.floor(rng() * palette.leaves.length) });
+      } else if (this.worldMap !== 'city') {
         rocks.push({ x, z, scale: 0.8 + rng() * 2.35, rotation: rng() * Math.PI * 2 });
       }
     }
@@ -1988,7 +2042,7 @@ export class GameRenderer {
         dummy.scale.set(shape.radius * tree.scale, shape.height * tree.scale, shape.radius * tree.scale);
         dummy.updateMatrix();
         layer.setMatrixAt(i, dummy.matrix);
-        const color = new THREE.Color(season.leaves[(tree.color + layerIndex) % season.leaves.length]);
+        const color = new THREE.Color(palette.leaves[(tree.color + layerIndex) % palette.leaves.length]);
         color.multiplyScalar(0.88 + layerIndex * 0.055);
         layer.setColorAt(i, color);
       });
@@ -2006,7 +2060,7 @@ export class GameRenderer {
     const rockCount = rocks.length * rockPieces;
     const rockClusters = new THREE.InstancedMesh(
       new THREE.DodecahedronGeometry(1, LOW_POWER_MODE ? 0 : 1),
-      worldMaterial({ color: season.rock, roughness: 0.94, flatShading: true }),
+      worldMaterial({ color: palette.rock, roughness: 0.94, flatShading: true }),
       rockCount,
     );
     rocks.forEach((rock, i) => {
@@ -2023,10 +2077,12 @@ export class GameRenderer {
     rockClusters.receiveShadow = true;
     chunk.group.add(rockClusters);
 
-    const shrubCount = LOW_POWER_MODE ? 8 : 18;
+    const shrubCount = this.worldMap === 'city'
+      ? (LOW_POWER_MODE ? 5 : 10)
+      : (LOW_POWER_MODE ? 8 : 18);
     const shrubs = new THREE.InstancedMesh(
       new THREE.IcosahedronGeometry(0.55, LOW_POWER_MODE ? 0 : 1),
-      worldMaterial({ color: season.leaves[1], roughness: 1, flatShading: true }),
+      worldMaterial({ color: palette.leaves[1], roughness: 1, flatShading: true }),
       shrubCount,
     );
     for (let i = 0; i < shrubCount; i++) {
@@ -2044,31 +2100,140 @@ export class GameRenderer {
     shrubs.receiveShadow = true;
     chunk.group.add(shrubs);
 
-    for (const side of [-1, 1]) {
-      for (let peak = 0; peak < (LOW_POWER_MODE ? 1 : 2); peak++) {
+    if (this.worldMap === 'city') {
+      const buildingCount = LOW_POWER_MODE ? 14 : 24;
+      const buildingGeometry = new THREE.BoxGeometry(1, 1, 1);
+      const buildings = new THREE.InstancedMesh(
+        buildingGeometry,
+        worldMaterial({ color: 0xffffff, roughness: 0.88, metalness: 0.05 }),
+        buildingCount,
+      );
+      const windowPanels = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(1, 1, 1),
+        worldMaterial({ color: 0x9bc4c5, emissive: 0x6d9a9b, emissiveIntensity: 0.42, roughness: 0.4 }),
+        buildingCount,
+      );
+      const buildingColors = [0x68716f, 0x7a746d, 0x596866, 0x817b72, 0x525b5c];
+      for (let i = 0; i < buildingCount; i++) {
+        const z = startZ - rng() * CHUNK_LENGTH;
+        const side = rng() < 0.5 ? -1 : 1;
+        const width = 5 + rng() * 8;
+        const depth = 6 + rng() * 11;
+        const height = 8 + rng() * (LOW_POWER_MODE ? 19 : 29);
+        const x = roadCenter(z) + side * (15 + rng() * 48);
+        dummy.position.set(x, height * 0.5 - 0.08, z);
+        dummy.rotation.set(0, rng() * 0.08, 0);
+        dummy.scale.set(width, height, depth);
+        dummy.updateMatrix();
+        buildings.setMatrixAt(i, dummy.matrix);
+        buildings.setColorAt(i, new THREE.Color(buildingColors[Math.floor(rng() * buildingColors.length)]));
+
+        dummy.position.set(x - side * (width * 0.505), height * 0.54, z);
+        dummy.rotation.set(0, 0, 0);
+        dummy.scale.set(0.08, height * 0.48, depth * 0.7);
+        dummy.updateMatrix();
+        windowPanels.setMatrixAt(i, dummy.matrix);
+      }
+      buildings.castShadow = true;
+      buildings.receiveShadow = true;
+      windowPanels.castShadow = false;
+      if (buildings.instanceColor) buildings.instanceColor.needsUpdate = true;
+      chunk.group.add(buildings, windowPanels);
+
+      const lampCount = LOW_POWER_MODE ? 12 : 20;
+      const lampPoles = new THREE.InstancedMesh(
+        new THREE.CylinderGeometry(0.055, 0.075, 4.5, LOW_POWER_MODE ? 5 : 8),
+        worldMaterial({ color: 0x303837, roughness: 0.72, metalness: 0.48 }),
+        lampCount,
+      );
+      const lampHeads = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(0.32, 0.13, 0.52),
+        worldMaterial({ color: 0xffd99a, emissive: 0xffa84d, emissiveIntensity: 1.25, roughness: 0.3 }),
+        lampCount,
+      );
+      for (let i = 0; i < lampCount; i++) {
+        const side = i % 2 ? -1 : 1;
+        const z = startZ - ((i + 0.5) / lampCount) * CHUNK_LENGTH;
+        const x = roadCenter(z) + side * 6.1;
+        dummy.position.set(x, 2.18, z);
+        dummy.rotation.set(0, 0, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        lampPoles.setMatrixAt(i, dummy.matrix);
+        dummy.position.set(x - side * 0.12, 4.43, z);
+        dummy.updateMatrix();
+        lampHeads.setMatrixAt(i, dummy.matrix);
+      }
+      lampPoles.castShadow = true;
+      lampHeads.castShadow = true;
+      chunk.group.add(lampPoles, lampHeads);
+    } else if (this.worldMap === 'desert') {
+      const cactusCount = LOW_POWER_MODE ? 10 : 18;
+      const cactusMaterial = worldMaterial({ color: 0x486044, roughness: 0.94 });
+      const cactusTrunks = new THREE.InstancedMesh(
+        new THREE.CylinderGeometry(0.22, 0.3, 2.8, LOW_POWER_MODE ? 6 : 9),
+        cactusMaterial,
+        cactusCount,
+      );
+      const cactusArms = new THREE.InstancedMesh(
+        new THREE.CylinderGeometry(0.13, 0.16, 1.15, LOW_POWER_MODE ? 6 : 9),
+        cactusMaterial,
+        cactusCount * 2,
+      );
+      for (let i = 0; i < cactusCount; i++) {
+        const z = startZ - rng() * CHUNK_LENGTH;
+        const side = rng() < 0.5 ? -1 : 1;
+        const x = roadCenter(z) + side * (11 + rng() * 62);
+        const scale = 0.72 + rng() * 1.15;
+        dummy.position.set(x, 1.35 * scale, z);
+        dummy.rotation.set(0, rng() * Math.PI, 0);
+        dummy.scale.set(scale, scale, scale);
+        dummy.updateMatrix();
+        cactusTrunks.setMatrixAt(i, dummy.matrix);
+        for (let arm = 0; arm < 2; arm++) {
+          const armSide = arm ? -1 : 1;
+          dummy.position.set(x + armSide * 0.3 * scale, (1.15 + arm * 0.55) * scale, z);
+          dummy.rotation.set(0, 0, armSide * Math.PI * 0.38);
+          dummy.scale.set(scale, scale, scale);
+          dummy.updateMatrix();
+          cactusArms.setMatrixAt(i * 2 + arm, dummy.matrix);
+        }
+      }
+      cactusTrunks.castShadow = true;
+      cactusArms.castShadow = true;
+      chunk.group.add(cactusTrunks, cactusArms);
+    }
+
+    if (this.worldMap !== 'city') {
+      for (const side of [-1, 1]) {
+        for (let peak = 0; peak < (LOW_POWER_MODE ? 1 : 2); peak++) {
         const mountain = new THREE.Mesh(
           makeMountainGeometry(index * 283 + side * 31 + peak * 719),
           worldMaterial({
-            color: season.hills[side > 0 ? 1 : 0],
+            color: palette.hills[side > 0 ? 1 : 0],
             roughness: 1,
             flatShading: true,
           }),
         );
-        const height = (peak === 0 ? 27 : 19) + rng() * 10;
+        const desert = this.worldMap === 'desert';
+        const height = desert
+          ? (peak === 0 ? 12 : 8) + rng() * 6
+          : (peak === 0 ? 27 : 19) + rng() * 10;
         mountain.position.set(
-          centerX + side * (82 + peak * 18 + rng() * 18),
+          centerX + side * ((desert ? 74 : 82) + peak * 18 + rng() * 18),
           -0.15,
           centerZ + (peak ? 28 : -12) + (rng() - 0.5) * 32,
         );
         mountain.scale.set(
-          (peak === 0 ? 31 : 23) + rng() * 10,
+          (desert ? (peak === 0 ? 44 : 34) : (peak === 0 ? 31 : 23)) + rng() * 10,
           height,
-          (peak === 0 ? 27 : 20) + rng() * 9,
+          (desert ? (peak === 0 ? 31 : 25) : (peak === 0 ? 27 : 20)) + rng() * 9,
         );
         mountain.rotation.y = rng() * Math.PI;
         mountain.castShadow = true;
         mountain.receiveShadow = true;
         chunk.group.add(mountain);
+        }
       }
     }
   }

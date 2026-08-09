@@ -1,6 +1,6 @@
 import './style.css';
 import { DrivingSimulation, roadCenter, type InputState } from './simulation';
-import { GameRenderer } from './renderer';
+import { GameRenderer, type WorldMapId } from './renderer';
 import {
   CAR_COLORS,
   CAR_SPECS,
@@ -54,8 +54,22 @@ const settingsState = document.querySelector<HTMLElement>('#settingsState')!;
 const onlinePresence = document.querySelector<HTMLElement>('#onlinePresence')!;
 const onlineCount = document.querySelector<HTMLElement>('#onlineCount')!;
 const onlineLabel = document.querySelector<HTMLElement>('#onlineLabel')!;
+const mapSelectLabel = document.querySelector<HTMLElement>('#mapSelectLabel')!;
+const selectedMapLabel = document.querySelector<HTMLElement>('#selectedMapLabel')!;
+const routeName = document.querySelector<HTMLElement>('#routeName')!;
 
 type Language = 'ko' | 'en';
+
+const WORLD_MAP_DETAILS: Record<WorldMapId, {
+  name: string;
+  route: string;
+  ko: string;
+  en: string;
+}> = {
+  mountain: { name: 'MOUNTAIN PASS', route: 'RIDGEWAY 09', ko: '숲과 높은 산맥', en: 'FORESTS & HIGH PEAKS' },
+  city: { name: 'METRO CITY', route: 'METRO LOOP 07', ko: '빌딩과 가로등', en: 'SKYLINE & STREETLIGHTS' },
+  desert: { name: 'DESERT RUN', route: 'SUNSCAR 66', ko: '모래와 메사 지형', en: 'SAND & RED MESAS' },
+};
 
 const UI_COPY = {
   ko: {
@@ -100,7 +114,13 @@ function loadTrafficEnabled() {
   return localStorage.getItem('mistline-traffic') !== 'off';
 }
 
+function loadWorldMap(): WorldMapId {
+  const saved = localStorage.getItem('mistline-map');
+  return saved === 'city' || saved === 'desert' ? saved : 'mountain';
+}
+
 let language = loadLanguage();
+let selectedMap = loadWorldMap();
 let lastNetworkMessage = '';
 let currentOnlineCount: number | null = null;
 
@@ -131,6 +151,7 @@ simulation.setTrafficEnabled(loadTrafficEnabled());
 view.setPlayerCustomization(customization);
 view.setTraffic(simulation.traffic);
 view.setTrafficEnabled(simulation.trafficEnabled);
+view.setWorldMap(selectedMap);
 const multiplayer = new MultiplayerSession();
 const presence = new PresenceSession();
 
@@ -210,7 +231,7 @@ function applyLanguage() {
   trafficLabel.textContent = copy.traffic;
   trafficValue.textContent = simulation.trafficEnabled ? copy.on : copy.off;
   languageLabel.textContent = copy.language;
-  settingsState.textContent = `TRAFFIC ${simulation.trafficEnabled ? 'ON' : 'OFF'} · ${language === 'ko' ? '한국어' : 'ENGLISH'}`;
+  updateMapUi();
   updatePresenceUi(currentOnlineCount);
   locatorLabel.textContent = language === 'ko' ? '팀 로케이터' : 'ALLY LOCATOR';
   locatorLeft.textContent = language === 'ko' ? '좌' : 'L';
@@ -231,6 +252,21 @@ function applyLanguage() {
   networkStatus.textContent = multiplayer.active
     ? localizeNetworkMessage(lastNetworkMessage)
     : copy.soloDrive;
+}
+
+function updateMapUi() {
+  const details = WORLD_MAP_DETAILS[selectedMap];
+  mapSelectLabel.textContent = language === 'ko' ? '월드 맵' : 'WORLD MAP';
+  selectedMapLabel.textContent = details.name;
+  routeName.textContent = details.route;
+  settingsState.textContent = `${details.name} · TRAFFIC ${simulation.trafficEnabled ? 'ON' : 'OFF'} · ${language === 'ko' ? '한국어' : 'ENGLISH'}`;
+  document.querySelectorAll<HTMLButtonElement>('[data-map]').forEach(button => {
+    const map = button.dataset.map as WorldMapId;
+    const mapDetails = WORLD_MAP_DETAILS[map];
+    button.classList.toggle('is-selected', map === selectedMap);
+    button.querySelector('small')!.textContent = mapDetails[language];
+    button.setAttribute('aria-label', `${mapDetails.name}, ${mapDetails[language]}`);
+  });
 }
 
 function formatLocatorDistance(distance: number) {
@@ -345,6 +381,16 @@ document.querySelectorAll<HTMLButtonElement>('[data-car]').forEach(button => {
 spoilerToggle.addEventListener('change', () => {
   customization = { ...customization, spoiler: spoilerToggle.checked };
   applyCustomization();
+});
+
+document.querySelectorAll<HTMLButtonElement>('[data-map]').forEach(button => {
+  button.addEventListener('click', () => {
+    selectedMap = button.dataset.map as WorldMapId;
+    localStorage.setItem('mistline-map', selectedMap);
+    view.setWorldMap(selectedMap);
+    simulation.restart();
+    updateMapUi();
+  });
 });
 
 trafficToggle.checked = simulation.trafficEnabled;

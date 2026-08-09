@@ -66,6 +66,23 @@
             <p id="multiplayerHelp">6자리 숫자를 친구에게 보내세요. 연결되면 양쪽에 <b>2 PLAYERS</b>가 표시됩니다.</p>
           </section>
         </div>
+        <section class="map-select" aria-label="맵 선택">
+          <div class="map-select__title"><span id="mapSelectLabel">WORLD MAP</span><small id="selectedMapLabel">MOUNTAIN PASS</small></div>
+          <div class="map-options">
+            <button class="is-selected" data-map="mountain">
+              <i class="map-preview map-preview--mountain" aria-hidden="true"></i>
+              <span><strong>MOUNTAIN PASS</strong><small>숲과 높은 산맥</small></span>
+            </button>
+            <button data-map="city">
+              <i class="map-preview map-preview--city" aria-hidden="true"></i>
+              <span><strong>METRO CITY</strong><small>빌딩과 가로등</small></span>
+            </button>
+            <button data-map="desert">
+              <i class="map-preview map-preview--desert" aria-hidden="true"></i>
+              <span><strong>DESERT RUN</strong><small>모래와 메사 지형</small></span>
+            </button>
+          </div>
+        </section>
         <section class="drive-settings" aria-label="게임 설정">
           <div class="drive-settings__title"><span>WORLD SETTINGS</span><small id="settingsState">TRAFFIC ON · 한국어</small></div>
           <label class="setting-toggle">
@@ -101,7 +118,7 @@
 
       <section id="hud" class="hud is-hidden" aria-live="polite">
         <div class="brand">MIST<span>LINE</span></div>
-        <div class="route-chip"><i></i><span>RIDGEWAY 09</span><small id="distance">0.0 KM</small></div>
+        <div class="route-chip"><i></i><span id="routeName">RIDGEWAY 09</span><small id="distance">0.0 KM</small></div>
         <div id="multiplayerHud" class="multiplayer-hud is-hidden"><i></i><span>SOLO</span></div>
         <div id="locatorBar" class="locator-bar is-hidden" aria-live="polite">
           <div class="locator-bar__heading">

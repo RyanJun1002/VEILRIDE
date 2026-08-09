@@ -70,6 +70,28 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .room-code.is-hidden { display: none; }
 .online-card > p { margin: 10px 0 0; color: rgba(255,255,255,.4); font-size: 8px; line-height: 1.5; }
 .online-card > p b { color: #8df0cc; font-weight: 700; }
+.map-select { width: min(920px, calc(100% - 36px)); margin-top: 8px; padding: 8px 10px; display: grid; grid-template-columns: 120px 1fr; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,.12); background: rgba(10,17,15,.62); backdrop-filter: blur(16px); text-align: left; }
+.map-select__title { display: flex; flex-direction: column; gap: 5px; font: 800 10px/1 var(--font-ui); letter-spacing: .16em; }
+.map-select__title small { color: var(--orange); font-size: 7px; letter-spacing: .08em; }
+.map-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.map-options button { min-width: 0; height: 50px; padding: 4px; display: flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.025); cursor: pointer; text-align: left; transition: border-color .2s, background .2s, transform .2s; }
+.map-options button:hover, .map-options button.is-selected { border-color: rgba(242,93,59,.85); background: rgba(242,93,59,.1); }
+.map-options button.is-selected { box-shadow: inset 2px 0 var(--orange); }
+.map-options button:hover { transform: translateY(-1px); }
+.map-options button > span { min-width: 0; }
+.map-options strong, .map-options small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.map-options strong { font: 800 11px/1 var(--font-display); letter-spacing: .07em; }
+.map-options small { margin-top: 5px; color: rgba(255,255,255,.44); font: 600 7px/1 var(--font-ui); }
+.map-preview { position: relative; flex: 0 0 54px; height: 40px; overflow: hidden; border: 1px solid rgba(255,255,255,.13); background: linear-gradient(#9db4a5 0 48%, #526148 49%); }
+.map-preview::before, .map-preview::after { content: ''; position: absolute; }
+.map-preview--mountain::before { left: 2px; bottom: 8px; width: 31px; height: 23px; background: #405449; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.map-preview--mountain::after { right: 4px; bottom: 6px; width: 22px; height: 17px; background: #566b55; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.map-preview--city { background: linear-gradient(#899da0 0 48%, #4f5754 49%); }
+.map-preview--city::before { left: 5px; bottom: 6px; width: 12px; height: 25px; background: #3c4849; box-shadow: 15px 7px #596260, 29px -3px #465254; }
+.map-preview--city::after { left: 8px; bottom: 12px; width: 4px; height: 2px; background: #e0c281; box-shadow: 0 -6px #b7d3ce, 15px 0 #e0c281, 29px -8px #b7d3ce, 29px 0 #e0c281; }
+.map-preview--desert { background: linear-gradient(#d7b37e 0 49%, #bd8f57 50%); }
+.map-preview--desert::before { left: 4px; bottom: 7px; width: 35px; height: 16px; background: #965d3e; clip-path: polygon(15% 30%, 26% 0, 78% 0, 92% 35%, 100% 100%, 0 100%); }
+.map-preview--desert::after { right: 6px; bottom: 5px; width: 4px; height: 20px; border-radius: 3px; background: #4f6540; box-shadow: -4px 6px 0 -1px #4f6540; }
 .drive-settings { width: min(920px, calc(100% - 36px)); min-height: 48px; margin-top: 8px; padding: 8px 13px; display: flex; align-items: center; gap: 18px; border: 1px solid rgba(255,255,255,.12); background: rgba(10,17,15,.58); backdrop-filter: blur(16px); text-align: left; }
 .drive-settings__title { display: flex; flex-direction: column; gap: 4px; margin-right: auto; font: 700 10px/1 var(--font-ui); letter-spacing: .16em; }
 .drive-settings__title small { color: rgba(255,255,255,.4); font-size: 7px; letter-spacing: .08em; }
@@ -149,13 +171,18 @@ kbd { min-width: 30px; padding: 5px 7px; border: 1px solid rgba(255,255,255,.2);
 
 html[data-quality='low'] .grain { display: none; }
 html[data-quality='low'] .vignette { box-shadow: inset 0 0 54px rgba(7, 12, 10, calc(.16 + var(--impact) * .4)); }
-html[data-quality='low'] :is(.garage-card, .online-card, .drive-settings, .route-chip, .multiplayer-hud, .locator-bar, .icon-button, .pause, .start-button, .touch-controls button) { backdrop-filter: none; }
+html[data-quality='low'] :is(.garage-card, .online-card, .map-select, .drive-settings, .route-chip, .multiplayer-hud, .locator-bar, .icon-button, .pause, .start-button, .touch-controls button) { backdrop-filter: none; }
 
 @media (max-width: 720px), (pointer: coarse) {
   .menu__controls { display: none; }
   .menu h1 { font-size: clamp(54px, 18vw, 68px); }
   .menu { justify-content: flex-start; padding: max(34px, env(safe-area-inset-top)) 0 calc(36px + env(safe-area-inset-bottom)); }
   .setup-panel { grid-template-columns: 1fr; width: min(94%, 560px); }
+  .map-select { width: min(94%, 560px); grid-template-columns: 1fr; }
+  .map-select__title { flex-direction: row; justify-content: space-between; }
+  .map-options button { height: 58px; flex-direction: column; align-items: stretch; gap: 4px; }
+  .map-preview { width: 100%; height: 27px; flex-basis: 27px; }
+  .map-options small { display: none; }
   .drive-settings { width: min(94%, 560px); min-height: 82px; padding: 10px 13px 12px; flex-wrap: wrap; justify-content: space-between; gap: 10px 12px; }
   .drive-settings__title { flex-basis: 100%; margin-right: 0; }
   .drive-settings + .start-button { margin-top: 16px; }
