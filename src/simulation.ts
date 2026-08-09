@@ -26,9 +26,30 @@ export type TrafficState = {
   z: number;
   lane: number;
   speed: number;
+  cruiseSpeed: number;
   direction: 1 | -1;
   color: number;
+  model: CarModelId;
   passed: boolean;
+};
+
+const TRAFFIC_MODELS: CarModelId[] = [
+  'mist-gt',
+  'apex-r',
+  'ridge-x',
+  'touring-s',
+  'trail-pickup',
+  'metro-bus',
+];
+
+const TRAFFIC_LENGTH: Record<CarModelId, number> = {
+  'mist-gt': 4.4,
+  'apex-r': 4.55,
+  'ridge-x': 4.75,
+  'touring-s': 4.9,
+  'trail-pickup': 5.45,
+  'metro-bus': 7.3,
+  'storm-moto': 2.2,
 };
 
 export const roadCenter = (z: number) =>
@@ -44,22 +65,55 @@ export class DrivingSimulation {
   traffic: TrafficState[] = [];
   nearMiss = false;
   collision = false;
+  trafficEnabled = true;
   private carSpec = CAR_SPECS['mist-gt'];
 
   constructor() {
     const colors = [0xe8e2d8, 0x19282c, 0xc64b36, 0xd9a441, 0x526d78, 0x6c4a63];
     for (let i = 0; i < 13; i++) {
       const direction = i % 3 === 2 ? -1 : 1;
+      const model = TRAFFIC_MODELS[i % TRAFFIC_MODELS.length];
+      const cruiseSpeed = this.makeTrafficSpeed(model, direction);
       this.traffic.push({
         id: i,
         z: -30 - i * 65 - Math.random() * 18,
         lane: direction === 1 ? -2 : 2,
-        speed: direction === 1 ? 17 + Math.random() * 11 : 23 + Math.random() * 8,
+        speed: cruiseSpeed,
+        cruiseSpeed,
         direction,
         color: colors[i % colors.length],
+        model,
         passed: false,
       });
     }
+  }
+
+  private makeTrafficSpeed(model: CarModelId, direction: 1 | -1) {
+    const base = model === 'metro-bus'
+      ? 14 + Math.random() * 5
+      : model === 'trail-pickup' || model === 'ridge-x'
+        ? 17 + Math.random() * 7
+        : 19 + Math.random() * 10;
+    return base + (direction === -1 ? 3 : 0);
+  }
+
+  private trafficGap(a: TrafficState, b: TrafficState, extra = 8) {
+    return (TRAFFIC_LENGTH[a.model] + TRAFFIC_LENGTH[b.model]) * 0.5 + extra;
+  }
+
+  private findFreeTrafficZ(car: TrafficState) {
+    for (let attempt = 0; attempt < 18; attempt++) {
+      const candidate = this.player.z - 420 - Math.random() * 540;
+      const clear = this.traffic.every(other => (
+        other.id === car.id
+        || other.lane !== car.lane
+        || Math.abs(candidate - other.z) >= this.trafficGap(car, other, 14)
+      ));
+      if (clear) return candidate;
+    }
+    const sameLane = this.traffic.filter(other => other.id !== car.id && other.lane === car.lane);
+    const farthest = sameLane.length ? Math.min(...sameLane.map(other => other.z)) : this.player.z - 520;
+    return farthest - TRAFFIC_LENGTH[car.model] - 24;
   }
 
   private freshPlayer(): VehicleState {
@@ -92,10 +146,20 @@ export class DrivingSimulation {
     this.carSpec = CAR_SPECS[model];
   }
 
+  setTrafficEnabled(enabled: boolean) {
+    this.trafficEnabled = enabled;
+    this.nearMiss = false;
+    this.collision = false;
+  }
+
   restart() {
     this.player = this.freshPlayer();
-    this.traffic.forEach((car, i) => {
-      car.z = -60 - i * 70;
+    let forwardIndex = 0;
+    let incomingIndex = 0;
+    this.traffic.forEach(car => {
+      const laneIndex = car.direction === 1 ? forwardIndex++ : incomingIndex++;
+      car.z = -80 - laneIndex * 92 - (car.direction === -1 ? 38 : 0);
+      car.speed = car.cruiseSpeed;
       car.passed = false;
     });
   }
@@ -205,15 +269,46 @@ export class DrivingSimulation {
     p.z -= (cos * p.forwardSpeed - sin * p.lateralSpeed) * dt;
     p.distance += Math.max(0, p.forwardSpeed) * dt;
 
+    if (!this.trafficEnabled) {
+      if (Math.abs(p.x - roadCenter(p.z)) > 32) this.reset();
+      return;
+    }
+
     for (const car of this.traffic) {
+      let leadCar: TrafficState | null = null;
+      let leadGap = Number.POSITIVE_INFINITY;
+      for (const other of this.traffic) {
+        if (other.id === car.id || other.direction !== car.direction || other.lane !== car.lane) continue;
+        const gap = (car.z - other.z) * car.direction;
+        if (gap > 0 && gap < leadGap) {
+          leadGap = gap;
+          leadCar = other;
+        }
+      }
+      let desiredSpeed = car.cruiseSpeed;
+      if (leadCar) {
+        const hardGap = this.trafficGap(car, leadCar, 5);
+        const followGap = hardGap + 11 + car.speed * 0.5;
+        if (leadGap < followGap) {
+          const room = Math.max(0, (leadGap - hardGap) / Math.max(1, followGap - hardGap));
+          desiredSpeed = Math.min(desiredSpeed, leadCar.speed * room);
+        }
+        if (leadGap < hardGap) {
+          car.z = leadCar.z + car.direction * hardGap;
+          car.speed = Math.min(car.speed, leadCar.speed);
+        }
+      }
+      const speedResponse = desiredSpeed < car.speed ? 3.8 : 0.55;
+      car.speed += (desiredSpeed - car.speed) * Math.min(1, dt * speedResponse);
       car.z -= car.speed * car.direction * dt;
       const recycleBehind = car.z > p.z + 110;
       const recycleAhead = car.z < p.z - 980;
       if (recycleBehind || recycleAhead) {
-        car.z = p.z - 480 - Math.random() * 460;
         car.direction = Math.random() < 0.28 ? -1 : 1;
         car.lane = car.direction === 1 ? -2 : 2;
-        car.speed = car.direction === 1 ? 17 + Math.random() * 12 : 22 + Math.random() * 10;
+        car.cruiseSpeed = this.makeTrafficSpeed(car.model, car.direction);
+        car.speed = car.cruiseSpeed;
+        car.z = this.findFreeTrafficZ(car);
         car.passed = false;
       }
 

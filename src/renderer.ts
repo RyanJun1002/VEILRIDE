@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import type { TrafficState, VehicleState } from './simulation';
 import { roadCenter, roadTangent } from './simulation';
-import { DEFAULT_CUSTOMIZATION, type CarCustomization } from './cars';
+import { DEFAULT_CUSTOMIZATION, type CarCustomization, type CarModelId } from './cars';
 import type { NetworkPlayerState } from './multiplayer';
 
 const ROAD_WIDTH = 8.4;
@@ -724,32 +724,44 @@ function finishCustomVehicle(
   return group;
 }
 
-function createLightweightTrafficCar(color: number) {
+function createLightweightTrafficCar(color: number, model: CarModelId) {
   const group = new THREE.Group();
-  const appearance = { ...DEFAULT_CUSTOMIZATION, color };
+  const appearance = { ...DEFAULT_CUSTOMIZATION, color, model };
   const paint = new THREE.MeshLambertMaterial({ color });
   const cabinMaterial = new THREE.MeshLambertMaterial({ color: 0x4f696b });
   const rubber = new THREE.MeshLambertMaterial({ color: 0x090b0a });
   const white = new THREE.MeshBasicMaterial({ color: 0xf0fff8 });
   const red = new THREE.MeshBasicMaterial({ color: 0xd7281e });
 
-  const body = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.58, 3.9), paint);
-  body.position.y = 0.53;
-  const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.58, 1.72), cabinMaterial);
-  cabin.position.set(0, 1.04, 0.08);
-  const headlights = new THREE.Mesh(new THREE.BoxGeometry(1.28, 0.11, 0.05), white);
-  headlights.position.set(0, 0.61, -1.98);
-  const taillights = new THREE.Mesh(new THREE.BoxGeometry(1.34, 0.1, 0.05), red);
-  taillights.position.set(0, 0.61, 1.98);
+  const shape = model === 'metro-bus'
+    ? { width: 2.35, bodyHeight: 1.12, length: 7.05, cabinWidth: 2.22, cabinHeight: 1.55, cabinLength: 6.35, bodyY: 0.68, cabinY: 1.82, cabinZ: 0.05, wheelX: 1.18, wheelZ: 2.35, wheelRadius: 0.5 }
+    : model === 'trail-pickup'
+      ? { width: 2.12, bodyHeight: 0.72, length: 5.35, cabinWidth: 1.92, cabinHeight: 0.9, cabinLength: 2.08, bodyY: 0.58, cabinY: 1.2, cabinZ: -0.82, wheelX: 1.08, wheelZ: 1.7, wheelRadius: 0.46 }
+      : model === 'ridge-x'
+        ? { width: 2.02, bodyHeight: 0.78, length: 4.5, cabinWidth: 1.72, cabinHeight: 0.82, cabinLength: 2.15, bodyY: 0.62, cabinY: 1.24, cabinZ: 0.02, wheelX: 1.02, wheelZ: 1.42, wheelRadius: 0.44 }
+        : model === 'apex-r'
+          ? { width: 1.92, bodyHeight: 0.5, length: 4.45, cabinWidth: 1.52, cabinHeight: 0.5, cabinLength: 1.72, bodyY: 0.46, cabinY: 0.88, cabinZ: 0.1, wheelX: 0.98, wheelZ: 1.42, wheelRadius: 0.37 }
+          : model === 'touring-s'
+            ? { width: 1.98, bodyHeight: 0.62, length: 4.85, cabinWidth: 1.66, cabinHeight: 0.64, cabinLength: 2.25, bodyY: 0.53, cabinY: 1.02, cabinZ: 0.08, wheelX: 1, wheelZ: 1.54, wheelRadius: 0.4 }
+            : { width: 1.9, bodyHeight: 0.58, length: 3.9, cabinWidth: 1.5, cabinHeight: 0.58, cabinLength: 1.72, bodyY: 0.53, cabinY: 1.04, cabinZ: 0.08, wheelX: 0.98, wheelZ: 1.28, wheelRadius: 0.38 };
+
+  const body = new THREE.Mesh(new THREE.BoxGeometry(shape.width, shape.bodyHeight, shape.length), paint);
+  body.position.y = shape.bodyY;
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(shape.cabinWidth, shape.cabinHeight, shape.cabinLength), cabinMaterial);
+  cabin.position.set(0, shape.cabinY, shape.cabinZ);
+  const headlights = new THREE.Mesh(new THREE.BoxGeometry(shape.width * 0.67, 0.11, 0.05), white);
+  headlights.position.set(0, shape.bodyY + 0.08, -shape.length * 0.505);
+  const taillights = new THREE.Mesh(new THREE.BoxGeometry(shape.width * 0.7, 0.1, 0.05), red);
+  taillights.position.set(0, shape.bodyY + 0.08, shape.length * 0.505);
   group.add(body, cabin, headlights, taillights);
 
-  const wheelGeometry = new THREE.CylinderGeometry(0.38, 0.38, 0.24, 8);
+  const wheelGeometry = new THREE.CylinderGeometry(shape.wheelRadius, shape.wheelRadius, 0.24, 8);
   const wheels: THREE.Group[] = [];
   const frontWheels: THREE.Group[] = [];
-  for (const x of [-0.98, 0.98]) {
-    for (const z of [-1.28, 1.28]) {
+  for (const x of [-shape.wheelX, shape.wheelX]) {
+    for (const z of [-shape.wheelZ, shape.wheelZ]) {
       const steeringPivot = new THREE.Group();
-      steeringPivot.position.set(x, 0.39, z);
+      steeringPivot.position.set(x, shape.wheelRadius + 0.01, z);
       const spinPivot = new THREE.Group();
       const wheel = new THREE.Mesh(wheelGeometry, rubber);
       wheel.rotation.z = Math.PI / 2;
@@ -761,7 +773,7 @@ function createLightweightTrafficCar(color: number) {
     }
   }
 
-  return finishCustomVehicle(group, wheels, frontWheels, appearance, null, 0.38, {
+  return finishCustomVehicle(group, wheels, frontWheels, appearance, null, shape.wheelRadius, {
     height: 1.2,
     forwardOffset: 0,
     sideOffset: 0,
@@ -1683,12 +1695,24 @@ export class GameRenderer {
   setTraffic(traffic: TrafficState[]) {
     for (const state of traffic.slice(0, TRAFFIC_RENDER_LIMIT)) {
       if (!this.trafficCars.has(state.id)) {
-        const car = LOW_POWER_MODE ? createLightweightTrafficCar(state.color) : createCar(state.color);
-        car.scale.setScalar(LOW_POWER_MODE ? 1.28 + (state.id % 3) * 0.05 : 0.92 + (state.id % 3) * 0.05);
+        const appearance: CarCustomization = {
+          ...DEFAULT_CUSTOMIZATION,
+          model: state.model,
+          color: state.color,
+          spoiler: state.model === 'apex-r',
+        };
+        const car = LOW_POWER_MODE
+          ? createLightweightTrafficCar(state.color, state.model)
+          : createCar(state.color, false, appearance);
+        car.scale.setScalar(LOW_POWER_MODE ? 1.05 : 0.94 + (state.id % 3) * 0.025);
         this.scene.add(car);
         this.trafficCars.set(state.id, car);
       }
     }
+  }
+
+  setTrafficEnabled(enabled: boolean) {
+    for (const car of this.trafficCars.values()) car.visible = enabled;
   }
 
   setPlayerCustomization(customization: CarCustomization) {
