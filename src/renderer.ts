@@ -514,6 +514,158 @@ function createCockpit() {
   return cockpit;
 }
 
+function createPickupCockpit() {
+  const cockpit = new THREE.Group();
+  const dash = new THREE.MeshStandardMaterial({ color: 0x202725, roughness: 0.86, metalness: 0.06 });
+  const dashTop = new THREE.MeshStandardMaterial({ color: 0x3d4844, roughness: 0.7, metalness: 0.14 });
+  const leather = new THREE.MeshStandardMaterial({ color: 0x171d1b, roughness: 0.94 });
+  const trim = new THREE.MeshStandardMaterial({ color: 0x77817d, roughness: 0.34, metalness: 0.72 });
+  const rubber = new THREE.MeshPhysicalMaterial({ color: 0x1c2421, roughness: 0.62, clearcoat: 0.22 });
+  const accent = new THREE.MeshStandardMaterial({ color: 0xff673e, emissive: 0x7d1d0c, emissiveIntensity: 0.62 });
+  const screenMaterial = new THREE.MeshStandardMaterial({
+    color: 0x183c38,
+    emissive: 0x2a8174,
+    emissiveIntensity: 0.3,
+    roughness: 0.3,
+  });
+  const glass = new THREE.MeshPhysicalMaterial({
+    color: 0xa7c8c6,
+    transparent: true,
+    opacity: 0.09,
+    roughness: 0.035,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+
+  const upperDash = roundedBox(1.94, 0.15, 0.5, 0.055, dashTop);
+  upperDash.position.set(0, 0.69, -0.54);
+  const lowerDash = roundedBox(1.9, 0.31, 0.28, 0.045, dash);
+  lowerDash.position.set(0, 0.49, -0.47);
+  cockpit.add(upperDash, lowerDash);
+
+  const clusterCanvas = document.createElement('canvas');
+  clusterCanvas.width = 1024;
+  clusterCanvas.height = 416;
+  const clusterContext = clusterCanvas.getContext('2d')!;
+  const clusterTexture = new THREE.CanvasTexture(clusterCanvas);
+  clusterTexture.colorSpace = THREE.SRGBColorSpace;
+  clusterTexture.anisotropy = 8;
+  const clusterHood = roundedBox(0.62, 0.22, 0.12, 0.05, dashTop);
+  clusterHood.position.set(-0.43, 0.84, -0.34);
+  const clusterDisplay = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.54, 0.17),
+    new THREE.MeshBasicMaterial({ map: clusterTexture, toneMapped: false }),
+  );
+  clusterDisplay.position.set(-0.43, 0.83, -0.264);
+  clusterDisplay.renderOrder = 5;
+  (clusterDisplay.material as THREE.MeshBasicMaterial).depthTest = false;
+  cockpit.add(clusterHood, clusterDisplay);
+
+  const steeringWheel = new THREE.Group();
+  steeringWheel.position.set(-0.43, 0.68, -0.06);
+  steeringWheel.rotation.x = 0.2;
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.023, 12, 36), rubber);
+  const hub = roundedBox(0.13, 0.095, 0.045, 0.035, dashTop);
+  for (const side of [-1, 1]) {
+    const spoke = roundedBox(0.115, 0.038, 0.025, 0.012, trim);
+    spoke.position.set(side * 0.09, -0.005, 0);
+    spoke.rotation.z = side * -0.08;
+    const button = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.009, 10), side < 0 ? accent : trim);
+    button.rotation.x = Math.PI / 2;
+    button.position.set(side * 0.105, 0.018, 0.018);
+    steeringWheel.add(spoke, button);
+  }
+  const lowerSpoke = roundedBox(0.04, 0.12, 0.025, 0.012, trim);
+  lowerSpoke.position.y = -0.085;
+  steeringWheel.add(rim, hub, lowerSpoke);
+  const column = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.045, 0.4, 12), dash);
+  column.rotation.x = Math.PI / 2;
+  column.position.set(-0.43, 0.68, -0.24);
+  cockpit.add(steeringWheel, column);
+
+  const centerStack = roundedBox(0.43, 0.45, 0.12, 0.045, dashTop);
+  centerStack.position.set(0.34, 0.57, -0.37);
+  const infotainment = roundedBox(0.32, 0.19, 0.02, 0.018, screenMaterial);
+  infotainment.position.set(0.34, 0.65, -0.3);
+  const screenInset = roundedBox(0.25, 0.11, 0.012, 0.012, dash);
+  screenInset.position.set(0.34, 0.65, -0.287);
+  const screenLine = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.012, 0.008), accent);
+  screenLine.position.set(0.34, 0.65, -0.278);
+  cockpit.add(centerStack, infotainment, screenInset, screenLine);
+  for (const x of [-0.78, 0.76]) {
+    const vent = roundedBox(0.24, 0.08, 0.035, 0.018, trim);
+    vent.position.set(x, 0.68, -0.278);
+    for (let i = -1; i <= 1; i++) {
+      const vane = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.008, 0.008), dash);
+      vane.position.set(x, 0.68 + i * 0.022, -0.254);
+      cockpit.add(vane);
+    }
+    cockpit.add(vent);
+  }
+  for (let i = 0; i < 3; i++) {
+    const climate = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.018, 14), i === 1 ? accent : trim);
+    climate.rotation.x = Math.PI / 2;
+    climate.position.set(0.24 + i * 0.1, 0.46, -0.285);
+    cockpit.add(climate);
+  }
+
+  const floor = roundedBox(2.18, 0.11, 3.25, 0.07, leather);
+  floor.position.set(0, 0.1, 0.36);
+  const console = roundedBox(0.36, 0.22, 1.2, 0.09, dashTop);
+  console.position.set(0.18, 0.27, 0.38);
+  const shifter = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.032, 0.24, 10), trim);
+  shifter.position.set(0.18, 0.47, 0.08);
+  shifter.rotation.x = -0.18;
+  const shifterGrip = roundedBox(0.09, 0.12, 0.07, 0.035, rubber);
+  shifterGrip.position.set(0.18, 0.59, 0.05);
+  cockpit.add(floor, console, shifter, shifterGrip);
+  for (const z of [0.45, 0.68]) {
+    const cup = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.012, 8, 20), trim);
+    cup.rotation.x = Math.PI / 2;
+    cup.position.set(0.18, 0.395, z);
+    cockpit.add(cup);
+  }
+
+  for (const side of [-1, 1]) {
+    const door = roundedBox(0.1, 0.58, 1.52, 0.045, dash);
+    door.position.set(side * 1.02, 0.62, 0.18);
+    const armrest = roundedBox(0.16, 0.11, 0.58, 0.045, dashTop);
+    armrest.position.set(side * 0.94, 0.64, 0.28);
+    const handle = roundedBox(0.04, 0.055, 0.27, 0.018, trim);
+    handle.position.set(side * 0.91, 0.77, 0.16);
+    const pillar = roundedBox(0.09, 0.73, 0.1, 0.028, dash);
+    pillar.position.set(side * 0.96, 1.18, -0.46);
+    pillar.rotation.x = 0.29;
+    const rearPillar = roundedBox(0.1, 0.68, 0.11, 0.03, dash);
+    rearPillar.position.set(side * 0.97, 1.16, 0.86);
+    cockpit.add(door, armrest, handle, pillar, rearPillar);
+  }
+  const windshield = new THREE.Mesh(new THREE.PlaneGeometry(1.78, 0.72), glass);
+  windshield.position.set(0, 1.18, -0.54);
+  windshield.rotation.x = 0.18;
+  const windshieldTop = roundedBox(1.93, 0.07, 0.09, 0.025, dash);
+  windshieldTop.position.set(0, 1.54, -0.45);
+  const roof = roundedBox(1.96, 0.075, 1.72, 0.035, leather);
+  roof.position.set(0, 1.56, 0.28);
+  const rearWindow = new THREE.Mesh(new THREE.PlaneGeometry(1.52, 0.54), glass);
+  rearWindow.position.set(0, 1.2, 1.03);
+  rearWindow.rotation.y = Math.PI;
+  const mirror = roundedBox(0.39, 0.115, 0.045, 0.022, trim);
+  mirror.position.set(0.12, 1.38, -0.59);
+  const mirrorStem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.15, 8), trim);
+  mirrorStem.position.set(0.12, 1.47, -0.55);
+  cockpit.add(windshield, windshieldTop, roof, rearWindow, mirror, mirrorStem);
+
+  const interiorLight = new THREE.PointLight(0xd4e7df, 2.2, 3.1, 1.65);
+  interiorLight.position.set(-0.25, 1.32, 0.45);
+  cockpit.add(interiorLight);
+  cockpit.userData.steeringWheel = steeringWheel;
+  cockpit.userData.clusterContext = clusterContext;
+  cockpit.userData.clusterTexture = clusterTexture;
+  cockpit.visible = false;
+  return cockpit;
+}
+
 type CameraProfile = {
   height: number;
   forwardOffset: number;
@@ -1093,27 +1245,55 @@ function createPickup(appearance: CarCustomization, player: boolean) {
   const rim = new THREE.MeshStandardMaterial({ color: appearance.wheelColor, metalness: 0.9, roughness: 0.25 });
   const glass = new THREE.MeshPhysicalMaterial({ color: 0x72999b, transparent: true, opacity: 0.66, roughness: 0.07, side: THREE.DoubleSide, depthWrite: false });
   const chrome = new THREE.MeshStandardMaterial({ color: 0xaeb8b4, metalness: 0.9, roughness: 0.2 });
+  const bedLiner = new THREE.MeshStandardMaterial({ color: 0x202624, metalness: 0.08, roughness: 0.92 });
   const white = new THREE.MeshStandardMaterial({ color: 0xe9fff7, emissive: 0xbffff0, emissiveIntensity: 2.1 });
   const red = new THREE.MeshStandardMaterial({ color: 0x98110d, emissive: 0xff2117, emissiveIntensity: 1.5 });
   const amber = new THREE.MeshStandardMaterial({ color: 0xffa038, emissive: 0xff6718, emissiveIntensity: 1.5 });
   const body = roundedBox(2.18, 0.72, 5.35, 0.3, paint);
   body.position.y = 0.53;
-  const cab = roundedBox(2.04, 1.22, 2.16, 0.25, paint);
-  cab.position.set(0, 1.01, -0.9);
+  const cabBelt = roundedBox(2.05, 0.45, 2.16, 0.2, paint);
+  cabBelt.position.set(0, 1.03, -0.9);
+  const cabRoof = roundedBox(1.95, 0.16, 1.88, 0.16, paint);
+  cabRoof.position.set(0, 1.69, -0.82);
   const hood = roundedBox(2.06, 0.25, 1.52, 0.2, paint);
   hood.position.set(0, 0.9, -2.02);
-  const windshield = new THREE.Mesh(new THREE.PlaneGeometry(1.76, 0.72), glass);
-  windshield.position.set(0, 1.52, -2.04);
-  windshield.rotation.y = Math.PI;
-  const rearWindow = new THREE.Mesh(new THREE.PlaneGeometry(1.55, 0.58), glass);
-  rearWindow.position.set(0, 1.5, 0.285);
-  const bedFloor = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.12, 2.18), dark);
+  const hoodBulge = roundedBox(0.86, 0.08, 1.16, 0.09, paint);
+  hoodBulge.position.set(0, 1.055, -2.02);
+  const windshield = createGlassPanel([
+    [-0.84, 1.2, -1.91],
+    [0.84, 1.2, -1.91],
+    [0.79, 1.61, -1.56],
+    [-0.79, 1.61, -1.56],
+  ], glass);
+  const rearWindow = createGlassPanel([
+    [-0.77, 1.2, 0.13],
+    [-0.75, 1.6, 0.02],
+    [0.75, 1.6, 0.02],
+    [0.77, 1.2, 0.13],
+  ], glass);
+  const bedFloor = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.1, 2.18), bedLiner);
   bedFloor.position.set(0, 0.82, 1.35);
-  group.add(body, cab, hood, windshield, rearWindow, bedFloor);
+  group.add(body, cabBelt, cabRoof, hood, hoodBulge, windshield, rearWindow, bedFloor);
+  for (const x of [-0.91, 0.91]) {
+    for (const z of [-1.68, 0.04]) {
+      const pillar = roundedBox(0.13, 0.64, 0.14, 0.045, paint);
+      pillar.position.set(x, 1.4, z);
+      pillar.rotation.x = z < -1 ? -0.24 : 0.08;
+      group.add(pillar);
+    }
+  }
+  for (let i = -3; i <= 3; i++) {
+    const bedRib = new THREE.Mesh(new THREE.BoxGeometry(1.68, 0.025, 0.045), dark);
+    bedRib.position.set(0, 0.89, 1.35 + i * 0.29);
+    group.add(bedRib);
+  }
   for (const side of [-1, 1]) {
-    const sideWindow = new THREE.Mesh(new THREE.PlaneGeometry(0.92, 0.62), glass);
-    sideWindow.position.set(side * 1.085, 1.5, -0.92);
-    sideWindow.rotation.y = side * Math.PI / 2;
+    const sideWindow = createGlassPanel([
+      [side * 1.025, 1.2, -1.68],
+      [side * 1.025, 1.2, -0.08],
+      [side * 0.94, 1.61, -0.05],
+      [side * 0.94, 1.61, -1.48],
+    ], glass);
     const doorSeam = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.84, 0.045), dark);
     doorSeam.position.set(side * 1.055, 1.05, -0.12);
     const bedRail = roundedBox(0.18, 0.55, 2.25, 0.08, paint);
@@ -1127,12 +1307,15 @@ function createPickup(appearance: CarCustomization, player: boolean) {
     mirrorStem.position.set(side * 1.1, 1.55, -1.55);
     const mirrorHousing = roundedBox(0.24, 0.14, 0.12, 0.045, dark);
     mirrorHousing.position.set(side * 1.23, 1.55, -1.55);
-    group.add(sideWindow, doorSeam, bedRail, bedCap, step, mirrorStem, mirrorHousing);
+    const doorHandle = roundedBox(0.035, 0.06, 0.28, 0.02, chrome);
+    doorHandle.position.set(side * 1.075, 1.18, -0.45);
+    const bodyLine = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.045, 4.55), chrome);
+    bodyLine.position.set(side * 1.095, 0.88, -0.05);
+    group.add(sideWindow, doorSeam, bedRail, bedCap, step, mirrorStem, mirrorHousing, doorHandle, bodyLine);
 
     for (const z of [-1.72, 1.72]) {
-      const fenderFlare = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.055, 8, 24, Math.PI), dark);
-      fenderFlare.position.set(side * 1.075, 0.53, z);
-      fenderFlare.rotation.y = Math.PI / 2;
+      const fenderFlare = roundedBox(0.12, 0.15, 1.06, 0.045, dark);
+      fenderFlare.position.set(side * 1.085, 0.73, z);
       group.add(fenderFlare);
     }
   }
@@ -1149,6 +1332,14 @@ function createPickup(appearance: CarCustomization, player: boolean) {
     grilleSlat.position.set(0, 0.58 + i * 0.08, -2.875);
     group.add(grilleSlat);
   }
+  const grilleBadge = new THREE.Mesh(new THREE.CircleGeometry(0.1, 20), dark);
+  grilleBadge.position.set(0, 0.69, -2.91);
+  const badgeMark = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.13, 0.012), chrome);
+  badgeMark.position.set(0, 0.69, -2.925);
+  badgeMark.rotation.z = -0.36;
+  const skidPlate = roundedBox(1.28, 0.12, 0.19, 0.045, chrome);
+  skidPlate.position.set(0, 0.22, -2.79);
+  group.add(grilleBadge, badgeMark, skidPlate);
   for (const x of [-0.77, 0.77]) {
     const headlight = roundedBox(0.42, 0.2, 0.07, 0.04, white);
     headlight.position.set(x, 0.78, -2.83);
@@ -1162,17 +1353,25 @@ function createPickup(appearance: CarCustomization, player: boolean) {
   frontBumper.position.set(0, 0.35, -2.82);
   const rearBumper = frontBumper.clone();
   rearBumper.position.z = 2.78;
-  group.add(tailgate, tailgateHandle, frontFascia, grille, frontBumper, rearBumper);
+  const tailgateInset = roundedBox(1.2, 0.045, 0.025, 0.015, dark);
+  tailgateInset.position.set(0, 1.05, 2.724);
+  const towHitch = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.38), dark);
+  towHitch.position.set(0, 0.22, 2.91);
+  const hitchBall = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8), chrome);
+  hitchBall.position.set(0, 0.3, 3.1);
+  const thirdBrake = roundedBox(0.42, 0.07, 0.035, 0.02, red);
+  thirdBrake.position.set(0, 1.64, 0.14);
+  group.add(tailgate, tailgateHandle, tailgateInset, frontFascia, grille, frontBumper, rearBumper, towHitch, hitchBall, thirdBrake);
   const wheels: THREE.Group[] = [];
   const frontWheels: THREE.Group[] = [];
   for (const x of [-1.1, 1.1]) {
     addVehicleWheel(group, wheels, frontWheels, [x, 0.53, -1.72], 0.5, 0.32, rubber, rim, true);
     addVehicleWheel(group, wheels, frontWheels, [x, 0.53, 1.72], 0.5, 0.32, rubber, rim, false);
   }
-  const cockpit = player ? createCockpit() : null;
-  if (cockpit) cockpit.position.set(0, 0.38, -0.88);
+  const cockpit = player ? createPickupCockpit() : null;
+  if (cockpit) cockpit.position.set(0, 0.38, -1.16);
   return finishCustomVehicle(group, wheels, frontWheels, appearance, cockpit, 0.5, {
-    height: 1.52, forwardOffset: 0.15, sideOffset: -0.38, chaseHeight: 4.2, chaseDistance: 8.6, lookHeight: 1.25,
+    height: 1.6, forwardOffset: 0.05, sideOffset: -0.4, chaseHeight: 4.2, chaseDistance: 8.6, lookHeight: 1.25,
   }, 0.12);
 }
 
