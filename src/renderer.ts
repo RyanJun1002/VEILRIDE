@@ -538,9 +538,9 @@ function createPickupCockpit() {
   });
 
   const upperDash = roundedBox(1.94, 0.15, 0.5, 0.055, dashTop);
-  upperDash.position.set(0, 0.69, -0.54);
+  upperDash.position.set(0, 0.61, -0.54);
   const lowerDash = roundedBox(1.9, 0.31, 0.28, 0.045, dash);
-  lowerDash.position.set(0, 0.49, -0.47);
+  lowerDash.position.set(0, 0.41, -0.47);
   cockpit.add(upperDash, lowerDash);
 
   const clusterCanvas = document.createElement('canvas');
@@ -551,53 +551,54 @@ function createPickupCockpit() {
   clusterTexture.colorSpace = THREE.SRGBColorSpace;
   clusterTexture.anisotropy = 8;
   const clusterHood = roundedBox(0.62, 0.22, 0.12, 0.05, dashTop);
-  clusterHood.position.set(-0.43, 0.84, -0.34);
+  clusterHood.position.set(-0.43, 0.78, -0.34);
   const clusterDisplay = new THREE.Mesh(
     new THREE.PlaneGeometry(0.54, 0.17),
     new THREE.MeshBasicMaterial({ map: clusterTexture, toneMapped: false }),
   );
-  clusterDisplay.position.set(-0.43, 0.83, -0.264);
+  clusterDisplay.position.set(-0.43, 0.77, -0.264);
   clusterDisplay.renderOrder = 5;
   (clusterDisplay.material as THREE.MeshBasicMaterial).depthTest = false;
   cockpit.add(clusterHood, clusterDisplay);
 
   const steeringWheel = new THREE.Group();
-  steeringWheel.position.set(-0.43, 0.68, -0.06);
-  steeringWheel.rotation.x = 0.2;
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.023, 12, 36), rubber);
-  const hub = roundedBox(0.13, 0.095, 0.045, 0.035, dashTop);
+  steeringWheel.position.set(-0.43, 0.52, 0.01);
+  steeringWheel.rotation.x = 0.12;
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.158, 0.018, 12, 40), rubber);
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.047, 0.052, 0.04, 20), dashTop);
+  hub.rotation.x = Math.PI / 2;
   for (const side of [-1, 1]) {
-    const spoke = roundedBox(0.115, 0.038, 0.025, 0.012, trim);
-    spoke.position.set(side * 0.09, -0.005, 0);
-    spoke.rotation.z = side * -0.08;
+    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.024, 0.018), trim);
+    spoke.position.set(side * 0.074, -0.006, 0);
+    spoke.rotation.z = side * -0.12;
     const button = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.009, 10), side < 0 ? accent : trim);
     button.rotation.x = Math.PI / 2;
-    button.position.set(side * 0.105, 0.018, 0.018);
+    button.position.set(side * 0.095, 0.014, 0.015);
     steeringWheel.add(spoke, button);
   }
-  const lowerSpoke = roundedBox(0.04, 0.12, 0.025, 0.012, trim);
-  lowerSpoke.position.y = -0.085;
+  const lowerSpoke = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.105, 0.018), trim);
+  lowerSpoke.position.y = -0.075;
   steeringWheel.add(rim, hub, lowerSpoke);
   const column = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.045, 0.4, 12), dash);
   column.rotation.x = Math.PI / 2;
-  column.position.set(-0.43, 0.68, -0.24);
+  column.position.set(-0.43, 0.52, -0.22);
   cockpit.add(steeringWheel, column);
 
   const centerStack = roundedBox(0.43, 0.45, 0.12, 0.045, dashTop);
-  centerStack.position.set(0.34, 0.57, -0.37);
+  centerStack.position.set(0.34, 0.49, -0.37);
   const infotainment = roundedBox(0.32, 0.19, 0.02, 0.018, screenMaterial);
-  infotainment.position.set(0.34, 0.65, -0.3);
+  infotainment.position.set(0.34, 0.57, -0.3);
   const screenInset = roundedBox(0.25, 0.11, 0.012, 0.012, dash);
-  screenInset.position.set(0.34, 0.65, -0.287);
+  screenInset.position.set(0.34, 0.57, -0.287);
   const screenLine = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.012, 0.008), accent);
-  screenLine.position.set(0.34, 0.65, -0.278);
+  screenLine.position.set(0.34, 0.57, -0.278);
   cockpit.add(centerStack, infotainment, screenInset, screenLine);
   for (const x of [-0.78, 0.76]) {
     const vent = roundedBox(0.24, 0.08, 0.035, 0.018, trim);
-    vent.position.set(x, 0.68, -0.278);
+    vent.position.set(x, 0.6, -0.278);
     for (let i = -1; i <= 1; i++) {
       const vane = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.008, 0.008), dash);
-      vane.position.set(x, 0.68 + i * 0.022, -0.254);
+      vane.position.set(x, 0.6 + i * 0.022, -0.254);
       cockpit.add(vane);
     }
     cockpit.add(vent);
@@ -605,7 +606,7 @@ function createPickupCockpit() {
   for (let i = 0; i < 3; i++) {
     const climate = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.018, 14), i === 1 ? accent : trim);
     climate.rotation.x = Math.PI / 2;
-    climate.position.set(0.24 + i * 0.1, 0.46, -0.285);
+    climate.position.set(0.24 + i * 0.1, 0.38, -0.285);
     cockpit.add(climate);
   }
 
@@ -633,27 +634,27 @@ function createPickupCockpit() {
     armrest.position.set(side * 0.94, 0.64, 0.28);
     const handle = roundedBox(0.04, 0.055, 0.27, 0.018, trim);
     handle.position.set(side * 0.91, 0.77, 0.16);
-    const pillar = roundedBox(0.09, 0.73, 0.1, 0.028, dash);
-    pillar.position.set(side * 0.96, 1.18, -0.46);
+    const pillar = roundedBox(0.055, 0.76, 0.075, 0.022, dash);
+    pillar.position.set(side * 1.0, 1.29, -0.46);
     pillar.rotation.x = 0.29;
     const rearPillar = roundedBox(0.1, 0.68, 0.11, 0.03, dash);
     rearPillar.position.set(side * 0.97, 1.16, 0.86);
     cockpit.add(door, armrest, handle, pillar, rearPillar);
   }
-  const windshield = new THREE.Mesh(new THREE.PlaneGeometry(1.78, 0.72), glass);
-  windshield.position.set(0, 1.18, -0.54);
+  const windshield = new THREE.Mesh(new THREE.PlaneGeometry(1.94, 0.83), glass);
+  windshield.position.set(0, 1.28, -0.54);
   windshield.rotation.x = 0.18;
-  const windshieldTop = roundedBox(1.93, 0.07, 0.09, 0.025, dash);
-  windshieldTop.position.set(0, 1.54, -0.45);
-  const roof = roundedBox(1.96, 0.075, 1.72, 0.035, leather);
-  roof.position.set(0, 1.56, 0.28);
+  const windshieldTop = roundedBox(2.02, 0.045, 0.07, 0.02, dash);
+  windshieldTop.position.set(0, 1.7, -0.45);
+  const roof = roundedBox(2.04, 0.055, 1.08, 0.028, leather);
+  roof.position.set(0, 1.73, -0.08);
   const rearWindow = new THREE.Mesh(new THREE.PlaneGeometry(1.52, 0.54), glass);
   rearWindow.position.set(0, 1.2, 1.03);
   rearWindow.rotation.y = Math.PI;
   const mirror = roundedBox(0.39, 0.115, 0.045, 0.022, trim);
-  mirror.position.set(0.12, 1.38, -0.59);
+  mirror.position.set(0.12, 1.52, -0.59);
   const mirrorStem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.15, 8), trim);
-  mirrorStem.position.set(0.12, 1.47, -0.55);
+  mirrorStem.position.set(0.12, 1.62, -0.55);
   cockpit.add(windshield, windshieldTop, roof, rearWindow, mirror, mirrorStem);
 
   const interiorLight = new THREE.PointLight(0xd4e7df, 2.2, 3.1, 1.65);
@@ -1371,7 +1372,7 @@ function createPickup(appearance: CarCustomization, player: boolean) {
   const cockpit = player ? createPickupCockpit() : null;
   if (cockpit) cockpit.position.set(0, 0.38, -1.16);
   return finishCustomVehicle(group, wheels, frontWheels, appearance, cockpit, 0.5, {
-    height: 1.6, forwardOffset: 0.05, sideOffset: -0.4, chaseHeight: 4.2, chaseDistance: 8.6, lookHeight: 1.25,
+    height: 1.68, forwardOffset: 0.02, sideOffset: -0.4, chaseHeight: 4.2, chaseDistance: 8.6, lookHeight: 1.25,
   }, 0.12);
 }
 
@@ -2801,7 +2802,8 @@ export class GameRenderer {
     this.camera.position.copy(this.cameraPosition);
     this.camera.lookAt(this.cameraTarget);
     const targetFov = this.cameraMode === 1
-      ? 67 + Math.min(Math.abs(player.forwardSpeed) / 80, 1) * 4
+      ? (playerAppearance.model === 'trail-pickup' ? 75 : 67)
+        + Math.min(Math.abs(player.forwardSpeed) / 80, 1) * 4
       : 58 + Math.min(Math.abs(player.forwardSpeed), 80) * 0.24;
     this.camera.fov += (targetFov - this.camera.fov) * Math.min(1, dt * 3);
     this.camera.updateProjectionMatrix();
