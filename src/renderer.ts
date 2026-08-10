@@ -1967,6 +1967,7 @@ export class GameRenderer {
   readonly remoteCars = new Map<string, RemoteCarRender>();
   readonly chunks: WorldChunk[] = [];
   readonly lowPower = LOW_POWER_MODE;
+  private playerVisible = true;
   private composer: EffectComposer | null = null;
   private cameraMode = 0;
   private cameraSnap = true;
@@ -2174,7 +2175,13 @@ export class GameRenderer {
     this.playerCar = createCar(customization.color, true, customization);
     this.playerCar.position.copy(position);
     this.playerCar.rotation.copy(rotation);
+    this.playerCar.visible = this.playerVisible;
     this.scene.add(this.playerCar);
+  }
+
+  setPlayerVisible(visible: boolean) {
+    this.playerVisible = visible;
+    this.playerCar.visible = visible;
   }
 
   setRemotePlayers(players: NetworkPlayerState[]) {

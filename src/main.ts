@@ -12,6 +12,7 @@ import {
 } from './cars';
 import { MultiplayerSession, cleanRoomCode, type NetworkPlayerState } from './multiplayer';
 import { PresenceSession } from './presence';
+import { VehiclePreviewRenderer } from './vehicle-preview';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
 const menu = document.querySelector<HTMLElement>('#menu')!;
@@ -57,6 +58,14 @@ const onlineLabel = document.querySelector<HTMLElement>('#onlineLabel')!;
 const mapSelectLabel = document.querySelector<HTMLElement>('#mapSelectLabel')!;
 const selectedMapLabel = document.querySelector<HTMLElement>('#selectedMapLabel')!;
 const routeName = document.querySelector<HTMLElement>('#routeName')!;
+const vehiclePreviewCanvas = document.querySelector<HTMLCanvasElement>('#vehiclePreview')!;
+const vehiclePreviewShell = document.querySelector<HTMLElement>('.vehicle-preview-shell')!;
+const showcaseVehicleName = document.querySelector<HTMLElement>('#showcaseVehicleName')!;
+const menuMapWash = document.querySelector<HTMLElement>('.menu-map-wash')!;
+const menuSettingsButton = document.querySelector<HTMLButtonElement>('#menuSettingsButton')!;
+const menuSettingsDrawer = document.querySelector<HTMLElement>('#menuSettingsDrawer')!;
+const menuSettingsClose = document.querySelector<HTMLButtonElement>('#menuSettingsClose')!;
+const settingsBackdrop = document.querySelector<HTMLButtonElement>('#settingsBackdrop')!;
 const tutorial = document.querySelector<HTMLElement>('#tutorial')!;
 const tutorialButton = document.querySelector<HTMLButtonElement>('#tutorialButton')!;
 const tutorialButtonLabel = document.querySelector<HTMLElement>('#tutorialButtonLabel')!;
@@ -221,13 +230,17 @@ let customization = loadCustomization();
 
 const simulation = new DrivingSimulation();
 const view = new GameRenderer(canvas);
+const vehiclePreview = new VehiclePreviewRenderer(vehiclePreviewCanvas);
 document.documentElement.dataset.quality = view.lowPower ? 'low' : 'high';
 simulation.setCarModel(customization.model);
 simulation.setTrafficEnabled(loadTrafficEnabled());
 view.setPlayerCustomization(customization);
+view.setPlayerVisible(false);
 view.setTraffic(simulation.traffic);
 view.setTrafficEnabled(simulation.trafficEnabled);
 view.setWorldMap(selectedMap);
+vehiclePreview.setCustomization(customization);
+vehiclePreview.setWorldMap(selectedMap);
 const multiplayer = new MultiplayerSession();
 const presence = new PresenceSession();
 
@@ -317,6 +330,9 @@ function applyLanguage() {
   trafficLabel.textContent = copy.traffic;
   trafficValue.textContent = simulation.trafficEnabled ? copy.on : copy.off;
   languageLabel.textContent = copy.language;
+  menuSettingsButton.setAttribute('aria-label', language === 'ko' ? '설정 열기' : 'OPEN SETTINGS');
+  menuSettingsClose.setAttribute('aria-label', language === 'ko' ? '설정 닫기' : 'CLOSE SETTINGS');
+  settingsBackdrop.setAttribute('aria-label', language === 'ko' ? '설정 닫기' : 'CLOSE SETTINGS');
   updateMapUi();
   updatePresenceUi(currentOnlineCount);
   locatorLabel.textContent = language === 'ko' ? '팀 로케이터' : 'ALLY LOCATOR';
@@ -344,11 +360,14 @@ function applyLanguage() {
 
 function updateMapUi() {
   const details = WORLD_MAP_DETAILS[selectedMap];
+  menu.dataset.map = selectedMap;
+  vehiclePreviewShell.dataset.map = selectedMap;
+  vehiclePreview.setWorldMap(selectedMap);
   mapSelectLabel.textContent = language === 'ko' ? '월드 맵' : 'WORLD MAP';
   selectedMapLabel.textContent = details.name;
   routeName.textContent = details.route;
   settingsState.textContent = `${details.name} · TRAFFIC ${simulation.trafficEnabled ? 'ON' : 'OFF'} · ${language === 'ko' ? '한국어' : 'ENGLISH'}`;
-  document.querySelectorAll<HTMLButtonElement>('[data-map]').forEach(button => {
+  document.querySelectorAll<HTMLButtonElement>('button[data-map]').forEach(button => {
     const map = button.dataset.map as WorldMapId;
     const mapDetails = WORLD_MAP_DETAILS[map];
     button.classList.toggle('is-selected', map === selectedMap);
@@ -420,6 +439,7 @@ function updateGarageUi() {
   });
   spoilerToggle.checked = customization.spoiler;
   selectedClass.textContent = spec.className;
+  showcaseVehicleName.textContent = spec.name;
   accelStat.style.transform = `scaleX(${spec.acceleration / 10})`;
   topSpeedStat.style.transform = `scaleX(${spec.maxSpeed / 90})`;
   gripStat.style.transform = `scaleX(${spec.grip / 1.25})`;
@@ -430,6 +450,7 @@ function applyCustomization() {
   simulation.setCarModel(customization.model);
   audio?.setModel(customization.model);
   view.setPlayerCustomization(customization);
+  vehiclePreview.setCustomization(customization);
   if (!running) view.resetCamera();
   updateGarageUi();
 }
@@ -471,15 +492,30 @@ spoilerToggle.addEventListener('change', () => {
   applyCustomization();
 });
 
-document.querySelectorAll<HTMLButtonElement>('[data-map]').forEach(button => {
+document.querySelectorAll<HTMLButtonElement>('button[data-map]').forEach(button => {
   button.addEventListener('click', () => {
     selectedMap = button.dataset.map as WorldMapId;
     localStorage.setItem('mistline-map', selectedMap);
+    menuMapWash.classList.remove('is-shifting');
+    void menuMapWash.offsetWidth;
+    menuMapWash.classList.add('is-shifting');
     view.setWorldMap(selectedMap);
     simulation.restart();
     updateMapUi();
   });
 });
+
+function setMenuSettings(open: boolean) {
+  menuSettingsDrawer.classList.toggle('is-hidden', !open);
+  settingsBackdrop.classList.toggle('is-hidden', !open);
+  menuSettingsButton.setAttribute('aria-expanded', String(open));
+  if (open) requestAnimationFrame(() => menuSettingsClose.focus());
+  else if (document.activeElement === menuSettingsClose) menuSettingsButton.focus();
+}
+
+menuSettingsButton.addEventListener('click', () => setMenuSettings(menuSettingsDrawer.classList.contains('is-hidden')));
+menuSettingsClose.addEventListener('click', () => setMenuSettings(false));
+settingsBackdrop.addEventListener('click', () => setMenuSettings(false));
 
 trafficToggle.checked = simulation.trafficEnabled;
 trafficToggle.addEventListener('change', () => {
@@ -1000,6 +1036,9 @@ function requestStart() {
 function start() {
   running = true;
   paused = false;
+  setMenuSettings(false);
+  vehiclePreview.setActive(false);
+  view.setPlayerVisible(true);
   startedAt = performance.now();
   menu.classList.add('is-gone');
   hud.classList.remove('is-hidden');
@@ -1033,6 +1072,8 @@ function setPause(value: boolean) {
 function returnToMainMenu() {
   running = false;
   paused = false;
+  vehiclePreview.setActive(true);
+  view.setPlayerVisible(false);
   keys.clear();
   clearTouchInput();
   simulation.restart();
@@ -1085,6 +1126,11 @@ document.querySelector('#restartButton')!.addEventListener('click', () => {
 document.querySelector('#mainMenuButton')!.addEventListener('click', returnToMainMenu);
 
 addEventListener('keydown', (event) => {
+  if (!menuSettingsDrawer.classList.contains('is-hidden') && event.code === 'Escape') {
+    event.preventDefault();
+    setMenuSettings(false);
+    return;
+  }
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
   if (isTutorialOpen()) {
     if (['ArrowLeft', 'ArrowRight', 'Escape'].includes(event.code)) event.preventDefault();

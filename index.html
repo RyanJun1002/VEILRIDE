@@ -15,36 +15,92 @@
       <div class="vignette" aria-hidden="true"></div>
       <div class="grain" aria-hidden="true"></div>
 
-      <main id="menu" class="menu">
-        <div class="menu__eyebrow"><span></span><b id="eyebrowText">AN ENDLESS DRIVE</b></div>
-        <h1>MIST<span>LINE</span></h1>
-        <p id="tagline">안개가 머무는 능선. 엔진 소리. 그리고 끝나지 않는 코너.</p>
-        <div class="setup-panel">
-          <section class="garage-card">
-            <div class="panel-title"><span>GARAGE</span><small id="selectedClass">BALANCED</small></div>
-            <div class="car-picker" aria-label="차량 선택">
-              <button class="is-selected" data-car="mist-gt"><strong>MIST GT</strong><small>균형형</small></button>
-              <button data-car="apex-r"><strong>APEX R</strong><small>스포츠</small></button>
-              <button data-car="ridge-x"><strong>RIDGE X</strong><small>랠리</small></button>
-              <button data-car="touring-s"><strong>TOURING S</strong><small>그랜드 투어러</small></button>
-              <button data-car="trail-pickup"><strong>TRAIL 4X4</strong><small>픽업트럭</small></button>
-              <button data-car="metro-bus"><strong>METRO 09</strong><small>시내버스</small></button>
-              <button data-car="storm-moto"><strong>STORM R</strong><small>오토바이</small></button>
+      <main id="menu" class="menu" data-map="mountain">
+        <div class="menu-map-wash" aria-hidden="true"></div>
+        <header class="showroom-topbar">
+          <div class="showroom-brand">
+            <div class="menu__eyebrow"><span></span><b id="eyebrowText">AN ENDLESS DRIVE</b></div>
+            <h1>MIST<span>LINE</span></h1>
+            <p id="tagline">안개가 머무는 능선. 엔진 소리. 그리고 끝나지 않는 코너.</p>
+          </div>
+          <button id="menuSettingsButton" class="menu-settings-button" type="button" aria-label="설정 열기" aria-expanded="false" aria-controls="menuSettingsDrawer">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v2.1M12 19.9V22M2 12h2.1M19.9 12H22M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M19.1 4.9l-1.5 1.5M6.4 17.6l-1.5 1.5"/><circle cx="12" cy="12" r="7.1"/></svg>
+          </button>
+        </header>
+
+        <div class="showroom-layout">
+          <aside class="selection-panel" aria-label="차량과 맵 선택">
+            <section class="garage-card">
+              <div class="panel-title"><span>SELECT VEHICLE</span><small>GARAGE 07</small></div>
+              <div class="car-picker" aria-label="차량 선택">
+                <button class="is-selected" data-car="mist-gt"><strong>MIST GT</strong><small>균형형</small></button>
+                <button data-car="apex-r"><strong>APEX R</strong><small>스포츠</small></button>
+                <button data-car="ridge-x"><strong>RIDGE X</strong><small>랠리</small></button>
+                <button data-car="touring-s"><strong>TOURING S</strong><small>그랜드 투어러</small></button>
+                <button data-car="trail-pickup"><strong>TRAIL 4X4</strong><small>픽업트럭</small></button>
+                <button data-car="metro-bus"><strong>METRO 09</strong><small>시내버스</small></button>
+                <button data-car="storm-moto"><strong>STORM R</strong><small>오토바이</small></button>
+              </div>
+              <div class="car-stats">
+                <span><b id="accelLabel">가속</b><i id="accelStat"></i></span>
+                <span><b id="speedLabel">최고속도</b><i id="speedStat"></i></span>
+                <span><b id="gripLabel">그립</b><i id="gripStat"></i></span>
+              </div>
+              <div class="custom-row">
+                <span>PAINT</span>
+                <div id="paintPicker" class="swatches" aria-label="차량 색상"></div>
+                <span>WHEEL</span>
+                <div id="wheelPicker" class="swatches compact" aria-label="휠 색상"></div>
+                <label class="spoiler-toggle"><input id="spoilerToggle" type="checkbox" checked /><span></span> WING</label>
+              </div>
+            </section>
+
+            <section class="map-select" aria-label="맵 선택">
+              <div class="map-select__title"><span id="mapSelectLabel">SELECT WORLD</span><small>BACKGROUND</small></div>
+              <div class="map-options">
+                <button class="is-selected" data-map="mountain">
+                  <i class="map-preview map-preview--mountain" aria-hidden="true"></i>
+                  <span><strong>MOUNTAIN PASS</strong><small>숲과 높은 산맥</small></span>
+                </button>
+                <button data-map="city">
+                  <i class="map-preview map-preview--city" aria-hidden="true"></i>
+                  <span><strong>METRO CITY</strong><small>빌딩과 가로등</small></span>
+                </button>
+                <button data-map="desert">
+                  <i class="map-preview map-preview--desert" aria-hidden="true"></i>
+                  <span><strong>DESERT RUN</strong><small>모래와 메사 지형</small></span>
+                </button>
+              </div>
+            </section>
+          </aside>
+
+          <section class="vehicle-showcase" aria-label="선택한 차량 3D 미리보기">
+            <div class="showcase-heading">
+              <span>VEHICLE SHOWCASE</span>
+              <h2 id="showcaseVehicleName">MIST GT</h2>
+              <p><b id="selectedClass">BALANCED</b><i></i><small id="selectedMapLabel">MOUNTAIN PASS</small></p>
             </div>
-            <div class="car-stats">
-              <span><b id="accelLabel">가속</b><i id="accelStat"></i></span>
-              <span><b id="speedLabel">최고속도</b><i id="speedStat"></i></span>
-              <span><b id="gripLabel">그립</b><i id="gripStat"></i></span>
-            </div>
-            <div class="custom-row">
-              <span>PAINT</span>
-              <div id="paintPicker" class="swatches" aria-label="차량 색상"></div>
-              <span>WHEEL</span>
-              <div id="wheelPicker" class="swatches compact" aria-label="휠 색상"></div>
-              <label class="spoiler-toggle"><input id="spoilerToggle" type="checkbox" checked /><span></span> WING</label>
+            <div class="vehicle-preview-shell">
+              <canvas id="vehiclePreview" aria-label="회전하는 선택 차량 미리보기"></canvas>
+              <div class="showcase-orbit" aria-hidden="true"></div>
+              <div class="showcase-caption"><span>360° AUTO DISPLAY</span><small>SELECT A VEHICLE TO PREVIEW</small></div>
             </div>
           </section>
+        </div>
 
+        <div class="menu-drive-actions">
+          <button id="tutorialButton" class="tutorial-launch-button">
+            <span aria-hidden="true">?</span><b id="tutorialButtonLabel">튜토리얼 다시 보기</b>
+          </button>
+          <button id="startButton" class="start-button">
+            <span>DRIVE</span>
+            <small id="startLabel">엔진 시동</small>
+          </button>
+        </div>
+
+        <button id="settingsBackdrop" class="settings-backdrop is-hidden" type="button" tabindex="-1" aria-label="설정 닫기"></button>
+        <aside id="menuSettingsDrawer" class="menu-settings-drawer is-hidden" aria-label="게임 설정">
+          <header><div><span>SETTINGS</span><small>MISTLINE SYSTEM</small></div><button id="menuSettingsClose" type="button" aria-label="설정 닫기">×</button></header>
           <section class="online-card">
             <div class="panel-title">
               <span>MULTIPLAYER</span>
@@ -55,58 +111,17 @@
                 <small id="networkStatus">SOLO</small>
               </div>
             </div>
-            <div class="online-actions">
-              <button id="soloButton" class="is-selected">SOLO</button>
-              <button id="hostButton">방 만들기</button>
-            </div>
-            <div class="join-row">
-              <input id="roomCodeInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="6자리 숫자" aria-label="6자리 방 코드" />
-              <button id="joinButton">참가</button>
-            </div>
+            <div class="online-actions"><button id="soloButton" class="is-selected">SOLO</button><button id="hostButton">방 만들기</button></div>
+            <div class="join-row"><input id="roomCodeInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="6자리 숫자" aria-label="6자리 방 코드" /><button id="joinButton">참가</button></div>
             <button id="roomCodeDisplay" class="room-code is-hidden" title="클릭해서 복사"></button>
             <p id="multiplayerHelp">6자리 숫자를 친구에게 보내세요. 연결되면 양쪽에 <b>2 PLAYERS</b>가 표시됩니다.</p>
           </section>
-        </div>
-        <section class="map-select" aria-label="맵 선택">
-          <div class="map-select__title"><span id="mapSelectLabel">WORLD MAP</span><small id="selectedMapLabel">MOUNTAIN PASS</small></div>
-          <div class="map-options">
-            <button class="is-selected" data-map="mountain">
-              <i class="map-preview map-preview--mountain" aria-hidden="true"></i>
-              <span><strong>MOUNTAIN PASS</strong><small>숲과 높은 산맥</small></span>
-            </button>
-            <button data-map="city">
-              <i class="map-preview map-preview--city" aria-hidden="true"></i>
-              <span><strong>METRO CITY</strong><small>빌딩과 가로등</small></span>
-            </button>
-            <button data-map="desert">
-              <i class="map-preview map-preview--desert" aria-hidden="true"></i>
-              <span><strong>DESERT RUN</strong><small>모래와 메사 지형</small></span>
-            </button>
-          </div>
-        </section>
-        <section class="drive-settings" aria-label="게임 설정">
-          <div class="drive-settings__title"><span>WORLD SETTINGS</span><small id="settingsState">TRAFFIC ON · 한국어</small></div>
-          <label class="setting-toggle">
-            <input id="trafficToggle" type="checkbox" checked />
-            <span class="setting-toggle__track"></span>
-            <b id="trafficLabel">NPC 차량</b>
-            <small id="trafficValue">켜짐</small>
-          </label>
-          <label class="language-control" for="languageSelect">
-            <b id="languageLabel">언어</b>
-            <select id="languageSelect">
-              <option value="ko">한국어</option>
-              <option value="en">English</option>
-            </select>
-          </label>
-        </section>
-        <button id="startButton" class="start-button">
-          <span>DRIVE</span>
-          <small id="startLabel">엔진 시동</small>
-        </button>
-        <button id="tutorialButton" class="tutorial-launch-button">
-          <span aria-hidden="true">?</span><b id="tutorialButtonLabel">튜토리얼 다시 보기</b>
-        </button>
+          <section class="drive-settings" aria-label="월드 설정">
+            <div class="drive-settings__title"><span>WORLD SETTINGS</span><small id="settingsState">TRAFFIC ON · 한국어</small></div>
+            <label class="setting-toggle"><input id="trafficToggle" type="checkbox" checked /><span class="setting-toggle__track"></span><b id="trafficLabel">NPC 차량</b><small id="trafficValue">켜짐</small></label>
+            <label class="language-control" for="languageSelect"><b id="languageLabel">언어</b><select id="languageSelect"><option value="ko">한국어</option><option value="en">English</option></select></label>
+          </section>
+        </aside>
         <div class="menu__controls">
           <div><kbd>W</kbd><span>전진</span></div>
           <div><kbd>SHIFT</kbd><span>추가 가속</span></div>
