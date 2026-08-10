@@ -157,6 +157,12 @@ const presence = new PresenceSession();
 
 const keys = new Set<string>();
 const touch = new Set<string>();
+const touchJoystick = document.querySelector<HTMLElement>('#touchJoystick');
+const touchJoystickKnob = document.querySelector<HTMLElement>('#touchJoystickKnob');
+let joystickPointerId: number | null = null;
+let joystickSteer = 0;
+let joystickThrottle = 0;
+let joystickBrake = 0;
 let running = false;
 let paused = false;
 let startedAt = 0;
@@ -556,6 +562,8 @@ const ENGINE_SOUNDS: Record<CarModelId, EngineSoundProfile> = {
   },
 };
 
+const EXHAUST_VOLUME_BOOST = 1.22;
+
 function makeSaturationCurve(amount: number) {
   const samples = 512;
   const curve = new Float32Array(samples);
@@ -679,7 +687,7 @@ class EngineAudio {
       if (token !== this.pauseToken) return;
       const now = this.context.currentTime;
       this.gain.gain.cancelScheduledValues(now);
-      this.gain.gain.setTargetAtTime(this.profile.volume, now, 0.18);
+      this.gain.gain.setTargetAtTime(this.profile.volume * EXHAUST_VOLUME_BOOST, now, 0.18);
     });
   }
 
@@ -767,7 +775,7 @@ class EngineAudio {
       0.05,
     );
     this.gain.gain.setTargetAtTime(
-      this.profile.volume * (0.82 + driveThrottle * 0.28 + rpmRatio * 0.16),
+      this.profile.volume * EXHAUST_VOLUME_BOOST * (0.82 + driveThrottle * 0.28 + rpmRatio * 0.16),
       now,
       0.07,
     );
@@ -809,15 +817,25 @@ class EngineAudio {
 }
 
 function getInput(): InputState {
-  const left = keys.has('KeyA') || keys.has('ArrowLeft') || touch.has('left');
-  const right = keys.has('KeyD') || keys.has('ArrowRight') || touch.has('right');
+  const left = keys.has('KeyA') || keys.has('ArrowLeft');
+  const right = keys.has('KeyD') || keys.has('ArrowRight');
+  const keySteer = (left ? -1 : 0) + (right ? 1 : 0);
   return {
-    throttle: keys.has('KeyW') || keys.has('ArrowUp') || touch.has('gas') ? 1 : 0,
+    throttle: Math.max(keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0, joystickThrottle),
     boost: keys.has('ShiftLeft') || keys.has('ShiftRight') || touch.has('boost') ? 1 : 0,
-    brake: keys.has('KeyS') || keys.has('ArrowDown') || touch.has('brake') ? 1 : 0,
-    steer: (left ? -1 : 0) + (right ? 1 : 0),
+    brake: Math.max(keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0, joystickBrake),
+    steer: Math.max(-1, Math.min(1, keySteer + joystickSteer)),
     handbrake: keys.has('Space') || touch.has('handbrake'),
   };
+}
+
+function resetTouchJoystick() {
+  joystickPointerId = null;
+  joystickSteer = 0;
+  joystickThrottle = 0;
+  joystickBrake = 0;
+  touchJoystick?.classList.remove('is-active');
+  if (touchJoystickKnob) touchJoystickKnob.style.transform = 'translate(0px, 0px)';
 }
 
 function start() {
@@ -835,9 +853,10 @@ function start() {
 
 function clearTouchInput() {
   touch.clear();
+  resetTouchJoystick();
   document.querySelectorAll<HTMLButtonElement>('[data-touch]').forEach(button => {
     button.classList.remove('is-active', 'is-latched');
-    if (button.dataset.touch === 'boost') button.querySelector('small')!.textContent = 'BOOST';
+    if (button.dataset.touch === 'boost') button.querySelector('small')!.textContent = 'BOOST OFF';
   });
 }
 
@@ -882,6 +901,14 @@ function flashToast(message: string) {
 
 document.querySelector('#startButton')!.addEventListener('click', start);
 document.querySelector('#pauseButton')!.addEventListener('click', () => setPause(true));
+document.querySelector('#mobileCameraButton')?.addEventListener('click', () => {
+  view.cycleCamera();
+  flashToast(UI_COPY[language].cameraChanged);
+});
+document.querySelector('#mobileResetButton')?.addEventListener('click', () => {
+  simulation.reset();
+  flashToast(UI_COPY[language].roadReset);
+});
 document.querySelector('#resumeButton')!.addEventListener('click', () => setPause(false));
 document.querySelector('#restartButton')!.addEventListener('click', () => {
   simulation.restart();
@@ -933,7 +960,7 @@ document.querySelectorAll<HTMLButtonElement>('[data-touch]').forEach(button => {
       if (enabled) touch.add(action);
       else touch.delete(action);
       button.classList.toggle('is-latched', enabled);
-      button.querySelector('small')!.textContent = enabled ? 'BOOST ON' : 'BOOST';
+      button.querySelector('small')!.textContent = enabled ? 'BOOST ON' : 'BOOST OFF';
       return;
     }
     button.setPointerCapture(event.pointerId);
@@ -951,6 +978,46 @@ document.querySelectorAll<HTMLButtonElement>('[data-touch]').forEach(button => {
   button.addEventListener('lostpointercapture', up);
   button.addEventListener('contextmenu', event => event.preventDefault());
 });
+
+if (touchJoystick && touchJoystickKnob) {
+  const updateJoystick = (event: PointerEvent) => {
+    if (joystickPointerId !== event.pointerId) return;
+    const rect = touchJoystick.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const maxTravel = rect.width * 0.32;
+    let dx = event.clientX - centerX;
+    let dy = event.clientY - centerY;
+    const distance = Math.hypot(dx, dy);
+    if (distance > maxTravel) {
+      dx = dx / distance * maxTravel;
+      dy = dy / distance * maxTravel;
+    }
+    const normalizedX = dx / maxTravel;
+    const normalizedY = dy / maxTravel;
+    const deadZone = 0.08;
+    joystickSteer = Math.abs(normalizedX) < deadZone ? 0 : normalizedX;
+    joystickThrottle = normalizedY < -deadZone ? Math.min(1, -normalizedY) : 0;
+    joystickBrake = normalizedY > deadZone ? Math.min(1, normalizedY) : 0;
+    touchJoystickKnob.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
+  };
+  touchJoystick.addEventListener('pointerdown', event => {
+    event.preventDefault();
+    joystickPointerId = event.pointerId;
+    touchJoystick.setPointerCapture(event.pointerId);
+    touchJoystick.classList.add('is-active');
+    updateJoystick(event);
+  });
+  touchJoystick.addEventListener('pointermove', updateJoystick);
+  const releaseJoystick = (event: PointerEvent) => {
+    if (joystickPointerId !== event.pointerId) return;
+    resetTouchJoystick();
+  };
+  touchJoystick.addEventListener('pointerup', releaseJoystick);
+  touchJoystick.addEventListener('pointercancel', releaseJoystick);
+  touchJoystick.addEventListener('lostpointercapture', releaseJoystick);
+  touchJoystick.addEventListener('contextmenu', event => event.preventDefault());
+}
 
 function updateHud() {
   const p = simulation.player;

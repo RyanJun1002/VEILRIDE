@@ -13,9 +13,11 @@ const mobileDevice = matchMedia('(pointer: coarse)').matches || innerWidth <= 82
 const LOW_POWER_MODE = mobileDevice || deviceMemory <= 4 || cpuCores <= 4;
 const VERY_LOW_END = deviceMemory <= 3 || cpuCores <= 2;
 const CHUNK_COUNT = LOW_POWER_MODE ? (VERY_LOW_END ? 6 : 8) : 13;
-const TRAFFIC_RENDER_LIMIT = LOW_POWER_MODE ? (VERY_LOW_END ? 9 : 12) : Number.POSITIVE_INFINITY;
-const LOW_RENDER_SCALE = VERY_LOW_END ? 0.84 : 0.96;
-const LOW_POWER_PIXEL_RATIO = VERY_LOW_END ? 1 : Math.min(devicePixelRatio, 1.15);
+const TRAFFIC_RENDER_LIMIT = LOW_POWER_MODE ? (VERY_LOW_END ? 10 : 16) : Number.POSITIVE_INFINITY;
+const LOW_RENDER_SCALE = VERY_LOW_END ? 0.9 : 1;
+const LOW_POWER_PIXEL_RATIO = VERY_LOW_END
+  ? Math.min(devicePixelRatio, 1.15)
+  : Math.min(devicePixelRatio, 1.5);
 
 export type WorldMapId = 'mountain' | 'city' | 'desert';
 
@@ -2148,10 +2150,12 @@ export class GameRenderer {
       color: state.color,
       spoiler: state.model === 'apex-r',
     };
-    const car = LOW_POWER_MODE
+    // Modern phones and tablets can render the regular vehicle silhouettes.
+    // Reserve the boxy fallback for genuinely constrained devices only.
+    const car = VERY_LOW_END
       ? createLightweightTrafficCar(state.color, state.model)
       : createCar(state.color, false, appearance);
-    car.scale.setScalar(LOW_POWER_MODE ? 1.05 : 0.94 + (state.id % 3) * 0.025);
+    car.scale.setScalar(VERY_LOW_END ? 1.02 : 0.94 + (state.id % 3) * 0.025);
     this.scene.add(car);
     this.trafficCars.set(state.id, car);
     return car;

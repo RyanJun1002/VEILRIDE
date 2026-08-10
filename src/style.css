@@ -167,11 +167,11 @@ kbd { min-width: 30px; padding: 5px 7px; border: 1px solid rgba(255,255,255,.2);
 .pause button.main-menu-button:hover { background: rgba(242,93,59,.12); border-color: var(--orange); }
 .toast { position: fixed; z-index: 30; left: 50%; top: 75px; transform: translate(-50%, -8px); opacity: 0; padding: 8px 12px; background: rgba(10,16,14,.7); border-left: 2px solid var(--orange); font-size: 9px; letter-spacing: .08em; pointer-events: none; transition: .25s; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
-.touch-controls { display: none; }
+.touch-controls, .mobile-quick-actions { display: none; }
 
 html[data-quality='low'] .grain { display: none; }
 html[data-quality='low'] .vignette { box-shadow: inset 0 0 54px rgba(7, 12, 10, calc(.16 + var(--impact) * .4)); }
-html[data-quality='low'] :is(.garage-card, .online-card, .map-select, .drive-settings, .route-chip, .multiplayer-hud, .locator-bar, .icon-button, .pause, .start-button, .touch-controls button) { backdrop-filter: none; }
+html[data-quality='low'] :is(.garage-card, .online-card, .map-select, .drive-settings, .route-chip, .multiplayer-hud, .locator-bar, .icon-button, .pause, .start-button, .touch-controls button, .mobile-quick-actions button) { backdrop-filter: none; }
 
 @media (max-width: 720px), (pointer: coarse) {
   .menu__controls { display: none; }
@@ -192,32 +192,35 @@ html[data-quality='low'] :is(.garage-card, .online-card, .map-select, .drive-set
   .route-chip { top: 62px; }
   .locator-bar { top: 102px; width: min(290px, calc(100vw - 32px)); padding: 6px 9px 8px; }
   .icon-button { top: max(17px, env(safe-area-inset-top)); right: max(18px, env(safe-area-inset-right)); }
+  .mobile-quick-actions { position: absolute; z-index: 7; display: flex; gap: 7px; top: max(17px, env(safe-area-inset-top)); right: calc(max(18px, env(safe-area-inset-right)) + 48px); pointer-events: auto; }
+  .mobile-quick-actions button { width: 38px; height: 38px; padding: 0; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.2); border-radius: 11px; color: var(--cream); background: rgba(9,15,13,.62); backdrop-filter: blur(8px); box-shadow: 0 5px 16px rgba(0,0,0,.2); touch-action: manipulation; }
+  .mobile-quick-actions svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .mobile-quick-actions button:active { transform: scale(.93); border-color: var(--orange); color: var(--orange); }
   .multiplayer-hud { right: 62px; top: 17px; }
   .speedometer { left: max(18px, env(safe-area-inset-left)); bottom: calc(146px + env(safe-area-inset-bottom)); }
   .hint { display: none; }
-  .touch-controls { position: absolute; left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); display: flex; justify-content: space-between; align-items: end; pointer-events: none; }
-  .touch-controls > div { gap: 8px; }
-  .touch-steering { display: flex; }
-  .touch-pedals { display: grid; grid-template-columns: 58px 78px 62px 82px; grid-template-rows: 108px; align-items: end; }
-  .touch-controls button { pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; width: 78px; height: 78px; padding: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,.28); background: rgba(8,14,12,.68); backdrop-filter: blur(8px); box-shadow: inset 0 0 0 2px rgba(0,0,0,.16), 0 7px 22px rgba(0,0,0,.26); font-family: var(--font-ui); transition: transform .08s, filter .08s, border-color .08s; }
-  .touch-controls button span { font: 800 25px/.8 var(--font-display); }
-  .touch-controls button small { font: 800 8px/1 var(--font-ui); letter-spacing: .08em; color: rgba(255,255,255,.78); }
-  .touch-pedals button { width: 58px; height: 54px; border-radius: 18px; gap: 3px; }
-  .touch-pedals button span { font-size: 16px; }
-  .touch-pedals button small { font-size: 7px; letter-spacing: .03em; }
-  .touch-pedals .pedal-touch { grid-row: 1; width: 78px; height: 108px; border-radius: 22px; align-self: end; }
-  .touch-pedals .pedal-touch span { font-size: 22px; }
-  .touch-pedals .pedal-touch small { font-size: 9px; letter-spacing: .08em; }
-  .handbrake-touch { grid-column: 1; grid-row: 1; }
-  .brake-touch { grid-column: 2; }
-  .boost-touch { grid-column: 3; grid-row: 1; width: 62px !important; height: 70px !important; }
-  .gas-touch { grid-column: 4; }
-  .touch-controls .gas-touch { background: linear-gradient(180deg, rgba(248,119,73,.88), rgba(173,52,29,.86)); border-color: rgba(255,224,205,.66); }
-  .touch-controls .boost-touch { background: linear-gradient(180deg, rgba(223,165,62,.82), rgba(127,83,22,.84)); border-color: rgba(255,226,150,.54); }
-  .touch-controls .brake-touch { background: linear-gradient(180deg, rgba(154,48,43,.88), rgba(74,24,24,.9)); border-color: rgba(255,171,157,.52); }
-  .touch-controls .handbrake-touch { background: rgba(18,26,24,.82); }
-  .touch-controls button:is(:active, .is-active) { transform: translateY(4px) scale(.96); filter: brightness(1.42); border-color: white; box-shadow: inset 0 4px 14px rgba(0,0,0,.34), 0 2px 8px rgba(0,0,0,.2); }
-  .touch-controls .boost-touch.is-latched { filter: brightness(1.4); border-color: #fff3b0; box-shadow: inset 0 0 18px rgba(255,211,80,.28), 0 0 18px rgba(255,177,47,.62); transform: translateY(2px); }
+  .touch-controls { position: absolute; z-index: 6; left: max(16px, env(safe-area-inset-left)); right: max(16px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom)); display: flex; justify-content: space-between; align-items: end; pointer-events: none; }
+  .joystick-wrap, .touch-actions { pointer-events: auto; }
+  .touch-joystick { position: relative; width: 126px; height: 126px; border-radius: 50%; touch-action: none; user-select: none; -webkit-user-select: none; background: radial-gradient(circle, rgba(40,53,49,.54) 0 34%, rgba(7,13,11,.68) 35% 100%); border: 2px solid rgba(255,255,255,.26); box-shadow: inset 0 0 0 9px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.28); backdrop-filter: blur(8px); }
+  .touch-joystick::before, .touch-joystick::after { content: ''; position: absolute; left: 50%; top: 50%; background: rgba(255,255,255,.13); transform: translate(-50%,-50%); pointer-events: none; }
+  .touch-joystick::before { width: 78%; height: 1px; }
+  .touch-joystick::after { width: 1px; height: 78%; }
+  .touch-joystick > b { position: absolute; left: 50%; top: 9px; transform: translateX(-50%); color: rgba(255,255,255,.48); font-size: 12px; }
+  .touch-joystick > small { position: absolute; left: 50%; bottom: 9px; transform: translateX(-50%); font: 800 7px/1 var(--font-ui); letter-spacing: .16em; color: rgba(255,255,255,.56); }
+  .touch-joystick__knob { position: absolute; z-index: 2; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px; border-radius: 50%; border: 2px solid rgba(255,255,255,.48); background: linear-gradient(145deg, rgba(100,119,112,.96), rgba(31,43,39,.96)); box-shadow: inset 0 3px 8px rgba(255,255,255,.12), 0 5px 14px rgba(0,0,0,.45); pointer-events: none; will-change: transform; }
+  .touch-joystick.is-active { border-color: rgba(242,93,59,.7); }
+  .touch-actions { display: flex; align-items: end; gap: 10px; }
+  .touch-actions button { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0; color: var(--cream); font-family: var(--font-ui); backdrop-filter: blur(8px); }
+  .touch-actions button small { font: 800 8px/1 var(--font-ui); letter-spacing: .07em; color: rgba(255,255,255,.82); }
+  .handbrake-touch { width: 88px; height: 92px; gap: 7px; border: 2px solid rgba(255,157,138,.56); border-radius: 24px; background: linear-gradient(180deg, rgba(154,48,43,.9), rgba(67,22,22,.92)); box-shadow: inset 0 0 0 2px rgba(0,0,0,.16), 0 8px 22px rgba(0,0,0,.28); }
+  .handbrake-touch span { font: 800 23px/1 var(--font-display); }
+  .boost-switch { width: 88px; height: 58px; gap: 7px; border: 1px solid rgba(255,214,124,.5); border-radius: 19px; background: rgba(9,15,13,.72); box-shadow: 0 7px 20px rgba(0,0,0,.25); }
+  .boost-switch__track { position: relative; width: 50px; height: 24px; border-radius: 999px; background: rgba(255,255,255,.14); box-shadow: inset 0 2px 6px rgba(0,0,0,.3); transition: background .15s; }
+  .boost-switch__track i { position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,.78); transition: transform .15s, background .15s; }
+  .touch-actions button:is(:active, .is-active) { transform: translateY(3px) scale(.97); filter: brightness(1.25); }
+  .boost-switch.is-latched { border-color: #ffe18a; box-shadow: 0 0 20px rgba(255,180,45,.38); }
+  .boost-switch.is-latched .boost-switch__track { background: linear-gradient(90deg, #d17b23, #ffc34e); }
+  .boost-switch.is-latched .boost-switch__track i { transform: translateX(26px); background: white; }
 }
 
 @media (max-height: 520px) and (orientation: landscape) {
@@ -226,24 +229,22 @@ html[data-quality='low'] :is(.garage-card, .online-card, .map-select, .drive-set
   .locator-bar { top: calc(max(12px, env(safe-area-inset-top)) + 40px); width: min(270px, calc(100vw - 140px)); }
   .multiplayer-hud { display: none; }
   .speedometer { bottom: calc(116px + env(safe-area-inset-bottom)); transform: scale(.82); transform-origin: left bottom; }
-  .touch-controls button { width: 70px; height: 70px; }
-  .touch-pedals { grid-template-columns: 52px 72px 58px 76px; grid-template-rows: 92px; }
-  .touch-pedals button { width: 52px; height: 48px; border-radius: 15px; }
-  .touch-pedals .pedal-touch { width: 72px; height: 92px; border-radius: 20px; }
-  .touch-pedals .boost-touch { width: 58px !important; height: 68px !important; }
+  .touch-joystick { width: 108px; height: 108px; }
+  .touch-joystick__knob { width: 48px; height: 48px; margin: -24px; }
+  .handbrake-touch { width: 78px; height: 80px; border-radius: 21px; }
+  .boost-switch { width: 82px; height: 52px; }
   .menu { padding-top: max(20px, env(safe-area-inset-top)); }
   .menu > p { margin: 8px 20px 12px; }
 }
 
 @media (max-width: 520px) and (orientation: portrait) {
   .touch-controls { left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right)); }
-  .touch-controls button { width: 58px; height: 58px; }
-  .touch-pedals { grid-template-columns: 46px 64px 52px 66px; grid-template-rows: 90px; gap: 6px !important; }
-  .touch-pedals button { width: 46px; height: 44px; border-radius: 15px; }
-  .touch-pedals .pedal-touch { width: 64px; height: 90px; border-radius: 19px; }
-  .touch-pedals .boost-touch { width: 52px !important; height: 60px !important; }
-  .touch-controls button small { font-size: 7px; }
-  .speedometer { bottom: calc(124px + env(safe-area-inset-bottom)); }
+  .touch-joystick { width: 104px; height: 104px; }
+  .touch-joystick__knob { width: 46px; height: 46px; margin: -23px; }
+  .touch-actions { gap: 7px; }
+  .handbrake-touch { width: 72px; height: 78px; border-radius: 20px; }
+  .boost-switch { width: 76px; height: 50px; }
+  .speedometer { bottom: calc(116px + env(safe-area-inset-bottom)); }
 }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }

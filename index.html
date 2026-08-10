@@ -143,17 +143,28 @@
 
         <div id="nearMiss" class="near-miss">NEAR MISS <span>+500</span></div>
         <div id="hint" class="hint"><kbd>W</kbd> 90 KM/H &nbsp; <kbd>SHIFT</kbd> 제한 해제</div>
+        <div class="mobile-quick-actions" aria-label="모바일 빠른 기능">
+          <button id="mobileCameraButton" aria-label="카메라 전환" title="카메라 전환">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4z"/><circle cx="12" cy="13" r="3.3"/></svg>
+          </button>
+          <button id="mobileResetButton" aria-label="도로로 복귀" title="도로로 복귀">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h9.5a4.5 4.5 0 0 1 0 9H9"/><path d="m9 3-4 4 4 4"/></svg>
+          </button>
+        </div>
         <button id="pauseButton" class="icon-button" aria-label="일시정지">Ⅱ</button>
         <div class="touch-controls" aria-label="모바일 주행 조작">
-          <div class="touch-steering">
-            <button data-touch="left" aria-label="왼쪽으로 조향"><span>←</span><small>LEFT</small></button>
-            <button data-touch="right" aria-label="오른쪽으로 조향"><span>→</span><small>RIGHT</small></button>
+          <div class="joystick-wrap">
+            <div id="touchJoystick" class="touch-joystick" role="application" aria-label="주행 조이스틱">
+              <b aria-hidden="true">▲</b>
+              <i id="touchJoystickKnob" class="touch-joystick__knob"></i>
+              <small>DRIVE</small>
+            </div>
           </div>
-          <div class="touch-pedals">
+          <div class="touch-actions">
+            <button data-touch="boost" class="boost-switch" aria-label="부스트 켜기 또는 끄기">
+              <span class="boost-switch__track"><i></i></span><small>BOOST OFF</small>
+            </button>
             <button data-touch="handbrake" class="handbrake-touch" aria-label="핸드브레이크"><span>HB</span><small>HANDBRAKE</small></button>
-            <button data-touch="brake" class="brake-touch pedal-touch" aria-label="브레이크"><span>▼</span><small>BRAKE</small></button>
-            <button data-touch="boost" class="boost-touch" aria-label="추가 가속"><span>⚡</span><small>BOOST</small></button>
-            <button data-touch="gas" class="gas-touch pedal-touch" aria-label="전진"><span>▲</span><small>GAS</small></button>
           </div>
         </div>
       </section>
