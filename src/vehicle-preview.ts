@@ -3,9 +3,9 @@ import { createCar, type WorldMapId } from './renderer';
 import type { CarCustomization } from './cars';
 
 const MAP_STYLE: Record<WorldMapId, { platform: number; hemi: number; ground: number; key: number; rim: number }> = {
-  mountain: { platform: 0x25332c, hemi: 0xbfd8ca, ground: 0x28342d, key: 0xffd7a5, rim: 0x86c3a7 },
-  city: { platform: 0x20292d, hemi: 0xa7c1c8, ground: 0x1b2225, key: 0xe5f1ff, rim: 0x71b9d0 },
-  desert: { platform: 0x513a2c, hemi: 0xf2cca0, ground: 0x4d3428, key: 0xffbc79, rim: 0xe88650 },
+  mountain: { platform: 0xb7bdb9, hemi: 0xcfe4d8, ground: 0x35443b, key: 0xffdfb5, rim: 0x9bd9bc },
+  city: { platform: 0xb4bcc0, hemi: 0xc2d8dd, ground: 0x2b3539, key: 0xf1f7ff, rim: 0x8bd0e3 },
+  desert: { platform: 0xc1bbb3, hemi: 0xffddba, ground: 0x584236, key: 0xffc994, rim: 0xf1a06f },
 };
 
 export class VehiclePreviewRenderer {
@@ -13,16 +13,16 @@ export class VehiclePreviewRenderer {
   private readonly scene = new THREE.Scene();
   private readonly camera = new THREE.PerspectiveCamera(32, 1, 0.1, 80);
   private readonly pivot = new THREE.Group();
-  private readonly platformMaterial = new THREE.MeshStandardMaterial({
-    color: 0x25332c,
-    metalness: 0.32,
-    roughness: 0.7,
+  private readonly platformMaterial = new THREE.MeshBasicMaterial({
+    color: 0xb7bdb9,
     transparent: true,
-    opacity: 0.88,
+    opacity: 0.34,
+    depthWrite: false,
   });
-  private readonly hemi = new THREE.HemisphereLight(0xbfd8ca, 0x28342d, 2.3);
-  private readonly key = new THREE.DirectionalLight(0xffd7a5, 5.2);
-  private readonly rim = new THREE.DirectionalLight(0x86c3a7, 3.2);
+  private readonly hemi = new THREE.HemisphereLight(0xcfe4d8, 0x35443b, 2.65);
+  private readonly key = new THREE.DirectionalLight(0xffdfb5, 5.8);
+  private readonly fill = new THREE.DirectionalLight(0xffffff, 2.25);
+  private readonly rim = new THREE.DirectionalLight(0x9bd9bc, 3.55);
   private vehicle: THREE.Group | null = null;
   private active = true;
   private lastFrame = 0;
@@ -38,19 +38,20 @@ export class VehiclePreviewRenderer {
       powerPreference: 'high-performance',
     });
     this.renderer.setClearColor(0x000000, 0);
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, this.lowPower ? 1.15 : 1.5));
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, this.lowPower ? 1.25 : 1.75));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.12;
+    this.renderer.toneMappingExposure = 1.22;
     this.renderer.shadowMap.enabled = !this.lowPower;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this.camera.position.set(7.2, 3.8, 8.8);
     this.camera.lookAt(0, 1.05, 0);
-    this.scene.add(this.pivot, this.hemi, this.key, this.rim);
+    this.scene.add(this.pivot, this.hemi, this.key, this.fill, this.rim);
     this.key.position.set(-5, 8, 4);
     this.key.castShadow = !this.lowPower;
     this.key.shadow.mapSize.set(1024, 1024);
+    this.fill.position.set(4.5, 5.5, 8.5);
     this.rim.position.set(6, 4, -5);
 
     const platform = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 5.5, 0.12, this.lowPower ? 32 : 64), this.platformMaterial);
@@ -60,7 +61,7 @@ export class VehiclePreviewRenderer {
 
     const shadow = new THREE.Mesh(
       new THREE.CircleGeometry(5.05, this.lowPower ? 32 : 64),
-      new THREE.ShadowMaterial({ color: 0x000000, opacity: 0.3 }),
+      new THREE.ShadowMaterial({ color: 0x000000, opacity: 0.22 }),
     );
     shadow.rotation.x = -Math.PI / 2;
     shadow.position.y = 0.012;
@@ -129,6 +130,12 @@ export class VehiclePreviewRenderer {
     const height = Math.max(1, this.canvas.clientHeight);
     this.renderer.setSize(width, height, false);
     this.camera.aspect = width / height;
+    // Keep the showroom vehicle on the road centerline in the full-page scene,
+    // even though the preview canvas begins to the right of the selector panel.
+    const rect = this.canvas.getBoundingClientRect();
+    const targetLocalX = THREE.MathUtils.clamp(innerWidth * 0.5 - rect.left, width * 0.18, width * 0.82);
+    const shiftPixels = width * 0.5 - targetLocalX;
+    this.camera.filmOffset = shiftPixels / width * this.camera.getFilmWidth();
     this.camera.updateProjectionMatrix();
   }
 

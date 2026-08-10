@@ -369,7 +369,7 @@ kbd { min-width: 30px; padding: 5px 7px; border: 1px solid rgba(255,255,255,.2);
 .menu-settings-button svg { width: 27px; height: 27px; fill: none; stroke: currentColor; stroke-width: 1.45; stroke-linecap: round; }
 .menu-settings-button:hover { transform: rotate(12deg) scale(1.04); border-color: var(--orange); color: var(--orange); background: rgba(242,93,59,.1); }
 .menu-settings-button:active { transform: rotate(4deg) scale(.94); }
-.showroom-layout { position: absolute; z-index: 2; top: 132px; right: 44px; bottom: 88px; left: 44px; display: grid; grid-template-columns: minmax(300px, 340px) minmax(0, 1fr); gap: clamp(22px, 3vw, 46px); }
+.showroom-layout { position: absolute; z-index: 2; top: 132px; right: 44px; bottom: 100px; left: 44px; display: grid; grid-template-columns: clamp(360px, 22vw, 410px) minmax(0, 1fr); gap: clamp(22px, 2.6vw, 42px); }
 .selection-panel { min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(242,93,59,.72) rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.17); background: linear-gradient(160deg, rgba(12,20,17,.88), rgba(9,15,13,.68)); backdrop-filter: blur(18px); box-shadow: 0 24px 64px rgba(0,0,0,.28); }
 .selection-panel .garage-card { min-height: 0; padding: 18px; border: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
 .selection-panel .panel-title { margin-bottom: 13px; }
@@ -394,15 +394,17 @@ kbd { min-width: 30px; padding: 5px 7px; border: 1px solid rgba(255,255,255,.2);
 .vehicle-preview-shell { position: absolute; inset: 0; --showcase-glow: rgba(99,157,124,.27); background: radial-gradient(ellipse at 58% 72%, var(--showcase-glow), transparent 47%); transition: background var(--motion-slow); }
 .vehicle-preview-shell[data-map='city'] { --showcase-glow: rgba(78,143,165,.29); }
 .vehicle-preview-shell[data-map='desert'] { --showcase-glow: rgba(209,118,59,.28); }
-#vehiclePreview { position: absolute; z-index: 2; inset: 0; width: 100%; height: 100%; touch-action: none; }
+#vehiclePreview { position: absolute; z-index: 2; inset: 0; width: 100%; height: 100%; touch-action: none; filter: brightness(1.06) contrast(1.04) saturate(1.05); }
 #vehiclePreview.is-changing { animation: vehicle-preview-change 480ms var(--ease-out); }
-.showcase-orbit { position: absolute; z-index: 1; left: 50%; bottom: 11%; width: min(78%, 760px); height: 22%; transform: translateX(-50%); border: 1px solid rgba(255,255,255,.15); border-radius: 50%; box-shadow: 0 0 42px var(--showcase-glow), inset 0 0 28px rgba(255,255,255,.025); }
+.showcase-orbit { position: absolute; z-index: 1; left: 50%; bottom: 11%; width: min(78%, 760px); height: 22%; transform: translateX(-50%); border: 1px solid rgba(235,238,236,.22); border-radius: 50%; box-shadow: 0 0 34px rgba(210,215,212,.1), inset 0 0 24px rgba(255,255,255,.04); }
 .showcase-orbit::before { content: ''; position: absolute; left: 50%; top: -4px; width: 7px; height: 7px; transform: translateX(-50%); border-radius: 50%; background: var(--orange); box-shadow: 0 0 12px var(--orange); }
 .showcase-caption { position: absolute; z-index: 3; right: 24px; bottom: 20px; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; color: rgba(255,255,255,.58); font: 800 7px/1 var(--font-ui); letter-spacing: .16em; }
 .showcase-caption small { color: rgba(255,255,255,.28); font-size: 6px; }
 .menu-drive-actions { position: absolute; z-index: 5; right: 44px; bottom: 23px; display: flex; align-items: center; gap: 12px; }
 .menu-drive-actions .tutorial-launch-button { margin: 0; }
-.menu-drive-actions .start-button { width: 180px; height: 58px; margin: 0; background: rgba(14,22,19,.86); }
+.menu-drive-actions .start-button { width: 230px; height: 72px; margin: 0; background: rgba(14,22,19,.86); }
+.menu-drive-actions .start-button span { font-size: 22px; }
+.menu-drive-actions .start-button small { margin-top: 7px; font-size: 10px; }
 .menu-drive-actions .start-button:hover { background: var(--orange); }
 .settings-backdrop { position: fixed; z-index: 11; inset: 0; border: 0; background: rgba(3,8,6,.48); backdrop-filter: blur(5px); opacity: 1; visibility: visible; cursor: default; transition: opacity var(--motion-base), visibility 0s; }
 .settings-backdrop.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--motion-base), visibility 0s var(--motion-base); }
@@ -416,7 +418,7 @@ kbd { min-width: 30px; padding: 5px 7px; border: 1px solid rgba(255,255,255,.2);
 .menu-settings-drawer .online-card { min-height: 0; padding: 16px; }
 .menu-settings-drawer .drive-settings { width: 100%; min-height: 0; margin-top: 12px; padding: 16px; flex-wrap: wrap; }
 .menu-settings-drawer .drive-settings__title { flex-basis: 100%; margin: 0 0 7px; }
-.menu__controls { z-index: 3; left: 44px; right: 310px; bottom: 24px; gap: 15px; justify-content: flex-start; }
+.menu__controls { z-index: 3; left: 44px; right: 395px; bottom: 24px; gap: 15px; justify-content: flex-start; }
 
 @keyframes map-wash-shift { 0% { opacity: .28; } 48% { opacity: .82; } 100% { opacity: .62; } }
 @keyframes vehicle-preview-change { from { opacity: 0; transform: translateX(16px) scale(.97); } to { opacity: 1; transform: translateX(0) scale(1); } }
@@ -527,7 +529,7 @@ html[data-quality='low'] :is(.garage-card, .online-card, .map-select, .drive-set
   .showroom-brand > p { display: none; }
   .menu-settings-button { width: 42px; height: 42px; }
   .menu-settings-button svg { width: 22px; height: 22px; }
-  .showroom-layout { top: 70px; right: max(18px, env(safe-area-inset-right)); bottom: 66px; left: max(18px, env(safe-area-inset-left)); grid-template-columns: 300px minmax(0, 1fr); gap: 16px; }
+  .showroom-layout { top: 70px; right: max(18px, env(safe-area-inset-right)); bottom: 72px; left: max(18px, env(safe-area-inset-left)); grid-template-columns: 330px minmax(0, 1fr); gap: 16px; }
   .selection-panel .garage-card { padding: 13px; }
   .selection-panel .car-picker { gap: 4px; }
   .selection-panel .car-picker button { min-height: 39px; padding: 6px 9px; }
@@ -539,7 +541,8 @@ html[data-quality='low'] :is(.garage-card, .online-card, .map-select, .drive-set
   .showcase-heading h2 { font-size: 43px; }
   .showcase-caption { right: 17px; bottom: 13px; }
   .menu-drive-actions { right: max(18px, env(safe-area-inset-right)); bottom: max(9px, env(safe-area-inset-bottom)); }
-  .menu-drive-actions .start-button { width: 148px; height: 48px; }
+  .menu-drive-actions .start-button { width: 174px; height: 56px; }
+  .menu-drive-actions .start-button span { font-size: 18px; }
   .menu-drive-actions .tutorial-launch-button { font-size: 7px; }
   .menu-settings-drawer { padding: 18px; }
 }
@@ -566,7 +569,7 @@ html[data-quality='low'] :is(.garage-card, .online-card, .map-select, .drive-set
   .selection-panel .map-preview { width: 66px; height: 40px; flex-basis: 66px; }
   .selection-panel .map-options small { display: block; }
   .menu-drive-actions { position: fixed; right: max(12px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); padding: 7px; border: 1px solid rgba(255,255,255,.1); background: rgba(8,14,12,.8); backdrop-filter: blur(12px); }
-  .menu-drive-actions .start-button { width: 138px; height: 52px; }
+  .menu-drive-actions .start-button { width: 162px; height: 58px; }
   .menu-drive-actions .tutorial-launch-button b { display: none; }
   .menu-drive-actions .tutorial-launch-button { width: 34px; height: 34px; justify-content: center; padding: 0; }
   .menu-settings-drawer { width: min(380px, calc(100vw - 16px)); padding: 20px 16px; }
