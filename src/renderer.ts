@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { TrafficState, VehicleState } from './simulation';
 import { roadCenter, roadTangent } from './simulation';
 import { DEFAULT_CUSTOMIZATION, type CarCustomization, type CarModelId } from './cars';
@@ -18,6 +19,10 @@ const LOW_RENDER_SCALE = VERY_LOW_END ? 0.9 : 1;
 const LOW_POWER_PIXEL_RATIO = VERY_LOW_END
   ? Math.min(devicePixelRatio, 1.15)
   : Math.min(devicePixelRatio, 1.5);
+const VEHICLE_CURVE_SEGMENTS = LOW_POWER_MODE ? 10 : 24;
+const VEHICLE_BEVEL_SEGMENTS = LOW_POWER_MODE ? 2 : 5;
+const VEHICLE_WHEEL_SEGMENTS = LOW_POWER_MODE ? 28 : 48;
+const VEHICLE_RIM_SEGMENTS = LOW_POWER_MODE ? 24 : 40;
 
 export type WorldMapId = 'mountain' | 'city' | 'desert';
 
@@ -91,18 +96,43 @@ function roundedBox(width: number, height: number, depth: number, radius: number
   shape.quadraticCurveTo(x, y + depth, x, y + depth - radius);
   shape.lineTo(x, y + radius);
   shape.quadraticCurveTo(x, y, x + radius, y);
+  const bevel = Math.min(0.075, radius * 0.48, height * 0.22);
   const geometry = new THREE.ExtrudeGeometry(shape, {
     depth: height,
     bevelEnabled: true,
-    bevelSize: 0.08,
-    bevelThickness: 0.08,
-    bevelSegments: LOW_POWER_MODE ? 1 : 2,
-    curveSegments: LOW_POWER_MODE ? 5 : 12,
+    bevelSize: bevel,
+    bevelThickness: bevel,
+    bevelSegments: VEHICLE_BEVEL_SEGMENTS,
+    curveSegments: VEHICLE_CURVE_SEGMENTS,
   });
   geometry.rotateX(Math.PI / 2);
   geometry.translate(0, height / 2, 0);
-  geometry.computeVertexNormals();
+  toCreasedNormals(geometry, Math.PI / 3);
   return new THREE.Mesh(geometry, material);
+}
+
+function createRoundedTyre(radius: number, width: number, material: THREE.Material) {
+  const tyre = new THREE.Group();
+  const shoulder = Math.min(radius * 0.2, width * 0.36);
+  const tread = new THREE.Mesh(
+    new THREE.TorusGeometry(radius - shoulder, shoulder, LOW_POWER_MODE ? 8 : 12, VEHICLE_WHEEL_SEGMENTS),
+    material,
+  );
+  tread.rotation.y = Math.PI / 2;
+  const barrel = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      radius - shoulder * 0.72,
+      radius - shoulder * 0.72,
+      width * 0.82,
+      VEHICLE_WHEEL_SEGMENTS,
+      1,
+      true,
+    ),
+    material,
+  );
+  barrel.rotation.z = Math.PI / 2;
+  tyre.add(tread, barrel);
+  return tyre;
 }
 
 function canvasRoundRect(
@@ -875,9 +905,8 @@ function addVehicleWheel(
   const steeringPivot = new THREE.Group();
   steeringPivot.position.set(...position);
   const spinPivot = new THREE.Group();
-  const tyre = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, width, 22), rubber);
-  tyre.rotation.z = Math.PI / 2;
-  const rim = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.57, radius * 0.57, width * 1.04, 18), rimMaterial);
+  const tyre = createRoundedTyre(radius, width, rubber);
+  const rim = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.57, radius * 0.57, width * 1.04, VEHICLE_RIM_SEGMENTS), rimMaterial);
   rim.rotation.z = Math.PI / 2;
   spinPivot.add(tyre, rim);
   steeringPivot.add(spinPivot);
@@ -1003,7 +1032,7 @@ function createLightweightTrafficCar(color: number, model: CarModelId) {
     group.add(spoiler);
   }
 
-  const wheelGeometry = new THREE.CylinderGeometry(shape.wheelRadius, shape.wheelRadius, 0.24, 8);
+  const wheelGeometry = new THREE.CylinderGeometry(shape.wheelRadius, shape.wheelRadius, 0.24, VERY_LOW_END ? 10 : 16);
   const wheels: THREE.Group[] = [];
   const frontWheels: THREE.Group[] = [];
   for (const x of [-shape.wheelX, shape.wheelX]) {
@@ -1033,7 +1062,7 @@ function createLightweightTrafficCar(color: number, model: CarModelId) {
 
 function createBus(appearance: CarCustomization, player: boolean) {
   const group = new THREE.Group();
-  const paint = new THREE.MeshPhysicalMaterial({ color: appearance.color, metalness: 0.28, roughness: 0.34, clearcoat: 0.72 });
+  const paint = new THREE.MeshPhysicalMaterial({ color: appearance.color, metalness: 0.24, roughness: 0.29, clearcoat: 0.9, clearcoatRoughness: 0.16 });
   const dark = new THREE.MeshStandardMaterial({ color: 0x121918, metalness: 0.35, roughness: 0.42 });
   const rubber = new THREE.MeshStandardMaterial({ color: 0x090b0a, roughness: 0.9 });
   const rim = new THREE.MeshStandardMaterial({ color: appearance.wheelColor, metalness: 0.88, roughness: 0.25 });
@@ -1173,7 +1202,7 @@ function createBus(appearance: CarCustomization, player: boolean) {
 
 function createMotorcycle(appearance: CarCustomization, player: boolean) {
   const group = new THREE.Group();
-  const paint = new THREE.MeshPhysicalMaterial({ color: appearance.color, metalness: 0.55, roughness: 0.22, clearcoat: 1 });
+  const paint = new THREE.MeshPhysicalMaterial({ color: appearance.color, metalness: 0.4, roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.13 });
   const dark = new THREE.MeshStandardMaterial({ color: 0x111615, metalness: 0.5, roughness: 0.38 });
   const rubber = new THREE.MeshStandardMaterial({ color: 0x070908, roughness: 0.92 });
   const metal = new THREE.MeshStandardMaterial({ color: appearance.wheelColor, metalness: 0.92, roughness: 0.2 });
@@ -1182,7 +1211,7 @@ function createMotorcycle(appearance: CarCustomization, player: boolean) {
   const frame = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.16, 1.2), metal);
   frame.position.set(0, 0.55, 0.05);
   frame.rotation.x = -0.08;
-  const tank = new THREE.Mesh(new THREE.SphereGeometry(0.46, 22, 14), paint);
+  const tank = new THREE.Mesh(new THREE.SphereGeometry(0.46, LOW_POWER_MODE ? 22 : 36, LOW_POWER_MODE ? 14 : 24), paint);
   tank.position.set(0, 0.89, -0.25);
   tank.scale.set(0.78, 0.7, 1.05);
   const fairing = roundedBox(0.62, 0.52, 0.8, 0.16, paint);
@@ -1205,7 +1234,7 @@ function createMotorcycle(appearance: CarCustomization, player: boolean) {
   const handlebar = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.7, 10), metal);
   handlebar.rotation.z = Math.PI / 2;
   handlebar.position.set(0, 1.15, -0.62);
-  const headlight = new THREE.Mesh(new THREE.SphereGeometry(0.15, 18, 12), white);
+  const headlight = new THREE.Mesh(new THREE.SphereGeometry(0.15, LOW_POWER_MODE ? 20 : 32, LOW_POWER_MODE ? 12 : 20), white);
   headlight.position.set(0, 0.98, -1.0);
   headlight.scale.z = 0.55;
   const tail = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.1, 0.08), red);
@@ -1218,7 +1247,7 @@ function createMotorcycle(appearance: CarCustomization, player: boolean) {
   const torso = roundedBox(0.5, 0.62, 0.38, 0.12, riderSuit);
   torso.position.set(0, 1.2, 0.13);
   torso.rotation.x = -0.36;
-  const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.25, 20, 14), riderSuit);
+  const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.25, LOW_POWER_MODE ? 22 : 34, LOW_POWER_MODE ? 14 : 22), riderSuit);
   helmet.position.set(0, 1.62, -0.13);
   const helmetVisor = new THREE.Mesh(new THREE.SphereGeometry(0.205, 18, 10, 0, Math.PI), visor);
   helmetVisor.position.set(0, 1.64, -0.29);
@@ -1242,7 +1271,7 @@ function createMotorcycle(appearance: CarCustomization, player: boolean) {
 
 function createPickup(appearance: CarCustomization, player: boolean) {
   const group = new THREE.Group();
-  const paint = new THREE.MeshPhysicalMaterial({ color: appearance.color, metalness: 0.5, roughness: 0.28, clearcoat: 0.85 });
+  const paint = new THREE.MeshPhysicalMaterial({ color: appearance.color, metalness: 0.34, roughness: 0.24, clearcoat: 0.95, clearcoatRoughness: 0.16 });
   const dark = new THREE.MeshStandardMaterial({ color: 0x151b1a, metalness: 0.42, roughness: 0.42 });
   const rubber = new THREE.MeshStandardMaterial({ color: 0x080a09, roughness: 0.92 });
   const rim = new THREE.MeshStandardMaterial({ color: appearance.wheelColor, metalness: 0.9, roughness: 0.25 });
@@ -1385,7 +1414,7 @@ export function createCar(color: number, player = false, customization?: CarCust
   if (appearance.model === 'trail-pickup') return createPickup(appearance, player);
   const detailed = player || Boolean(customization);
   const group = new THREE.Group();
-  const paint = new THREE.MeshPhysicalMaterial({ color: appearance.color, metalness: 0.62, roughness: 0.24, clearcoat: 1, clearcoatRoughness: 0.16 });
+  const paint = new THREE.MeshPhysicalMaterial({ color: appearance.color, metalness: 0.38, roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.12 });
   const dark = new THREE.MeshStandardMaterial({ color: 0x101416, metalness: 0.4, roughness: 0.32 });
   const carbon = new THREE.MeshPhysicalMaterial({ color: 0x151b1b, metalness: 0.72, roughness: 0.27, clearcoat: 0.65, clearcoatRoughness: 0.25 });
   const gunmetal = new THREE.MeshStandardMaterial({ color: appearance.wheelColor, metalness: 0.9, roughness: 0.22 });
@@ -1522,7 +1551,7 @@ export function createCar(color: number, player = false, customization?: CarCust
 
     const mirrorMount = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.055, 0.08), dark);
     mirrorMount.position.set(side * 0.92, 1.04, -0.53);
-    const mirrorHousing = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 10), paint);
+    const mirrorHousing = new THREE.Mesh(new THREE.SphereGeometry(0.13, LOW_POWER_MODE ? 16 : 28, LOW_POWER_MODE ? 10 : 18), paint);
     mirrorHousing.position.set(side * 1.04, 1.08, -0.52);
     mirrorHousing.scale.set(1.15, 0.58, 0.72);
     const mirrorGlass = new THREE.Mesh(new THREE.CircleGeometry(0.087, 16), glass);
@@ -1551,8 +1580,7 @@ export function createCar(color: number, player = false, customization?: CarCust
     }
   }
 
-  const wheelGeometry = new THREE.CylinderGeometry(0.39, 0.39, 0.28, 20);
-  const rimGeometry = new THREE.CylinderGeometry(0.22, 0.22, 0.292, 20);
+  const rimGeometry = new THREE.CylinderGeometry(0.22, 0.22, 0.292, VEHICLE_RIM_SEGMENTS);
   const wheels: THREE.Group[] = [];
   const frontWheels: THREE.Group[] = [];
   for (const x of [-1.01, 1.01]) {
@@ -1560,9 +1588,7 @@ export function createCar(color: number, player = false, customization?: CarCust
       const steeringPivot = new THREE.Group();
       steeringPivot.position.set(x, 0.43, z);
       const spinPivot = new THREE.Group();
-      const wheel = new THREE.Mesh(wheelGeometry, rubber);
-      wheel.rotation.z = Math.PI / 2;
-      wheel.castShadow = true;
+      const wheel = createRoundedTyre(0.39, 0.28, rubber);
       const rim = new THREE.Mesh(rimGeometry, detailed ? gunmetal : chrome);
       rim.rotation.z = Math.PI / 2;
       spinPivot.add(wheel, rim);
@@ -1571,10 +1597,10 @@ export function createCar(color: number, player = false, customization?: CarCust
         const rimLip = new THREE.Mesh(new THREE.TorusGeometry(0.225, 0.018, 8, 28), chrome);
         rimLip.rotation.y = Math.PI / 2;
         rimLip.position.x = outward;
-        const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.175, 0.175, 0.018, 24), brakeDisc);
+        const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.175, 0.175, 0.018, LOW_POWER_MODE ? 24 : 40), brakeDisc);
         disc.rotation.z = Math.PI / 2;
         disc.position.x = outward * 0.9;
-        const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.025, 18), dark);
+        const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.025, LOW_POWER_MODE ? 20 : 32), dark);
         hub.rotation.z = Math.PI / 2;
         hub.position.x = outward * 1.08;
         spinPivot.add(disc, rimLip, hub);
