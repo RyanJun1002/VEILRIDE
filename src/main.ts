@@ -62,6 +62,7 @@ const tutorialButton = document.querySelector<HTMLButtonElement>('#tutorialButto
 const tutorialButtonLabel = document.querySelector<HTMLElement>('#tutorialButtonLabel')!;
 const tutorialMode = document.querySelector<HTMLElement>('#tutorialMode')!;
 const tutorialProgress = document.querySelector<HTMLElement>('#tutorialProgress')!;
+const tutorialStage = document.querySelector<HTMLElement>('.tutorial__stage')!;
 const tutorialVisual = document.querySelector<HTMLElement>('#tutorialVisual')!;
 const tutorialKicker = document.querySelector<HTMLElement>('#tutorialKicker')!;
 const tutorialTitle = document.querySelector<HTMLElement>('#tutorialTitle')!;
@@ -956,6 +957,9 @@ function renderTutorial() {
       renderTutorial();
     });
   });
+  tutorialStage.classList.remove('is-refreshing');
+  void tutorialStage.offsetWidth;
+  tutorialStage.classList.add('is-refreshing');
 }
 
 function openTutorial(startsDrive: boolean) {

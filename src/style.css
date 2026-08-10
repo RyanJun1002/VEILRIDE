@@ -9,6 +9,12 @@
   --impact: 0;
   --font-display: 'Arial Narrow', 'Roboto Condensed', Impact, sans-serif;
   --font-ui: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --motion-fast: 160ms;
+  --motion-base: 320ms;
+  --motion-slow: 560ms;
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --ease-smooth: cubic-bezier(.4, 0, .2, 1);
+  --ease-pop: cubic-bezier(.2, 1.35, .35, 1);
 }
 
 * { box-sizing: border-box; }
@@ -248,7 +254,106 @@ kbd { min-width: 30px; padding: 5px 7px; border: 1px solid rgba(255,255,255,.2);
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .touch-controls, .mobile-quick-actions { display: none; }
 
+/* A restrained motion system: quick feedback, soft screen changes, no constant decoration. */
+.menu { transition: opacity var(--motion-slow) var(--ease-smooth), transform var(--motion-slow) var(--ease-out), visibility 0s; }
+.menu.is-gone { visibility: hidden; transition: opacity var(--motion-slow) var(--ease-smooth), transform var(--motion-slow) var(--ease-out), visibility 0s var(--motion-slow); }
+.menu:not(.is-gone) .menu__eyebrow { animation: ui-rise-in var(--motion-base) var(--ease-out) both 40ms; }
+.menu:not(.is-gone) h1 { animation: title-reveal var(--motion-slow) var(--ease-out) both 80ms; }
+.menu:not(.is-gone) > p { animation: ui-rise-in var(--motion-base) var(--ease-out) both 140ms; }
+.menu:not(.is-gone) .garage-card { animation: ui-rise-in var(--motion-slow) var(--ease-out) both 190ms; }
+.menu:not(.is-gone) .online-card { animation: ui-rise-in var(--motion-slow) var(--ease-out) both 240ms; }
+.menu:not(.is-gone) .map-select { animation: ui-rise-in var(--motion-base) var(--ease-out) both 290ms; }
+.menu:not(.is-gone) .drive-settings { animation: ui-rise-in var(--motion-base) var(--ease-out) both 330ms; }
+.menu:not(.is-gone) .start-button { animation: start-arrive var(--motion-slow) var(--ease-pop) both 370ms; }
+.menu:not(.is-gone) .tutorial-launch-button { animation: ui-fade-in var(--motion-base) var(--ease-out) both 440ms; }
+.menu:not(.is-gone) .menu__controls { animation: ui-fade-in var(--motion-slow) var(--ease-out) both 470ms; }
+
+.garage-card, .online-card, .map-select, .drive-settings { transition: border-color var(--motion-base) var(--ease-smooth), box-shadow var(--motion-base) var(--ease-smooth), background var(--motion-base) var(--ease-smooth); }
+.garage-card:hover, .online-card:hover { border-color: rgba(255,255,255,.22); box-shadow: 0 23px 58px rgba(0,0,0,.27); }
+.car-picker button, .online-actions button, .join-row button, .map-options button { transition: transform var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-smooth), background var(--motion-fast) var(--ease-smooth), box-shadow var(--motion-fast) var(--ease-smooth); }
+.car-picker button:hover, .online-actions button:hover, .join-row button:hover { transform: translateY(-2px); }
+.car-picker button:active, .online-actions button:active, .join-row button:active, .map-options button:active { transform: translateY(1px) scale(.985); }
+.car-picker button.is-selected, .online-actions button.is-selected, .map-options button.is-selected { animation: selected-settle var(--motion-base) var(--ease-pop); box-shadow: inset 2px 0 var(--orange), 0 7px 18px rgba(242,93,59,.08); }
+.map-options button:hover { transform: translateY(-2px); }
+.map-options button.is-selected .map-preview { transform: scale(1.025); filter: saturate(1.12) brightness(1.04); }
+.map-preview { transition: transform var(--motion-base) var(--ease-out), filter var(--motion-base) var(--ease-smooth); }
+.swatches button { transition: transform var(--motion-fast) var(--ease-pop), border-color var(--motion-fast), box-shadow var(--motion-fast); }
+.swatches button:hover { transform: scale(1.18); }
+.swatches button.is-selected { transform: scale(1.08); animation: swatch-pop var(--motion-base) var(--ease-pop); }
+.setting-toggle__track, .setting-toggle__track::after, .spoiler-toggle span, .spoiler-toggle span::after { transition-duration: var(--motion-base); transition-timing-function: var(--ease-out); }
+.setting-toggle:active .setting-toggle__track, .spoiler-toggle:active span { transform: scale(.94); }
+.language-control select, .join-row input { transition: border-color var(--motion-fast), box-shadow var(--motion-fast), background var(--motion-fast); }
+.language-control select:focus, .join-row input:focus { box-shadow: 0 0 0 3px rgba(242,93,59,.12); }
+.room-code:not(.is-hidden) { animation: ui-rise-in var(--motion-base) var(--ease-out) both; }
+.start-button { transition: transform var(--motion-base) var(--ease-out), background var(--motion-base) var(--ease-smooth), border-color var(--motion-base), box-shadow var(--motion-base); }
+.start-button:active { transform: skewX(-7deg) translateY(1px) scale(.97); }
+.tutorial-launch-button, .tutorial-launch-button span { transition: color var(--motion-fast), transform var(--motion-fast) var(--ease-pop), border-color var(--motion-fast), background var(--motion-fast); }
+.tutorial-launch-button:hover span { transform: rotate(8deg) scale(1.1); border-color: var(--orange); background: rgba(242,93,59,.1); }
+
+.hud { visibility: visible; transition: opacity var(--motion-base) var(--ease-smooth), visibility 0s; }
+.hud.is-hidden { visibility: hidden; transition: opacity var(--motion-base) var(--ease-smooth), visibility 0s var(--motion-base); }
+.hud:not(.is-hidden) .brand { animation: hud-from-left var(--motion-slow) var(--ease-out) both 70ms; }
+.hud:not(.is-hidden) .route-chip { animation: route-drop var(--motion-slow) var(--ease-out) both 100ms; }
+.hud:not(.is-hidden) .multiplayer-hud:not(.is-hidden), .hud:not(.is-hidden) .icon-button { animation: hud-from-right var(--motion-base) var(--ease-out) both 150ms; }
+.hud:not(.is-hidden) .speedometer { animation: ui-fade-in var(--motion-slow) var(--ease-out) both 170ms; }
+.hud:not(.is-hidden) .hint { animation: hint-arrive var(--motion-slow) var(--ease-out) both 280ms; }
+.hud:not(.is-hidden) .mobile-quick-actions button:first-child { animation: hud-from-right var(--motion-base) var(--ease-out) both 130ms; }
+.hud:not(.is-hidden) .mobile-quick-actions button:last-child { animation: hud-from-right var(--motion-base) var(--ease-out) both 180ms; }
+.hud:not(.is-hidden) .touch-joystick { animation: touch-rise var(--motion-slow) var(--ease-out) both 120ms; }
+.hud:not(.is-hidden) .touch-actions { animation: touch-rise var(--motion-slow) var(--ease-out) both 190ms; }
+.route-chip i { animation: route-pulse 2.4s ease-in-out infinite; }
+.icon-button { transition: transform var(--motion-fast) var(--ease-pop), color var(--motion-fast), border-color var(--motion-fast), background var(--motion-fast); }
+.icon-button:hover { transform: translateY(-2px); color: #fff; border-color: rgba(242,93,59,.7); background: rgba(242,93,59,.12); }
+.icon-button:active { transform: translateY(1px) scale(.94); }
+.speedometer strong { transition: color var(--motion-fast), text-shadow var(--motion-fast); }
+.hud.is-dimmed { transition-duration: var(--motion-base); }
+
+.pause { visibility: visible; transition: opacity var(--motion-base) var(--ease-smooth), visibility 0s, backdrop-filter var(--motion-base); }
+.pause.is-hidden { visibility: hidden; transition: opacity var(--motion-base) var(--ease-smooth), visibility 0s var(--motion-base), backdrop-filter var(--motion-base); }
+.pause:not(.is-hidden) p { animation: ui-rise-in var(--motion-base) var(--ease-out) both 40ms; }
+.pause:not(.is-hidden) h2 { animation: ui-rise-in var(--motion-slow) var(--ease-out) both 80ms; }
+.pause:not(.is-hidden) button { animation: ui-rise-in var(--motion-base) var(--ease-out) both; }
+.pause:not(.is-hidden) #resumeButton { animation-delay: 130ms; }
+.pause:not(.is-hidden) #restartButton { animation-delay: 170ms; }
+.pause:not(.is-hidden) #mainMenuButton { animation-delay: 210ms; }
+.pause button { transition: transform var(--motion-fast) var(--ease-out), background var(--motion-fast), border-color var(--motion-fast), color var(--motion-fast), box-shadow var(--motion-fast); }
+.pause button:hover { transform: translateY(-2px); box-shadow: 0 9px 24px rgba(242,93,59,.2); }
+.pause button:active { transform: translateY(1px) scale(.98); }
+
+.tutorial { transition: opacity var(--motion-base) var(--ease-smooth), visibility 0s, backdrop-filter var(--motion-base); }
+.tutorial.is-hidden { transition: opacity var(--motion-base) var(--ease-smooth), visibility 0s var(--motion-base), backdrop-filter var(--motion-base); }
+.tutorial:not(.is-hidden) .tutorial__card { animation: modal-enter var(--motion-slow) var(--ease-out) both; }
+.tutorial__stage.is-refreshing { animation: tutorial-step-in var(--motion-base) var(--ease-out) both; }
+.tutorial__skip, .tutorial__footer button { transition: transform var(--motion-fast) var(--ease-out), color var(--motion-fast), background var(--motion-fast), border-color var(--motion-fast), filter var(--motion-fast), box-shadow var(--motion-fast); }
+.tutorial__skip:hover { transform: translateX(-2px); }
+.tutorial__footer button:not(:disabled):hover { transform: translateY(-2px); }
+.tutorial__footer button:not(:disabled):active { transform: translateY(1px) scale(.98); }
+.tutorial__visual kbd { animation: key-float-in var(--motion-base) var(--ease-pop) both; }
+.tutorial__visual kbd:nth-child(2) { animation-delay: 50ms; }
+.tutorial__dots button { transition: width var(--motion-base) var(--ease-out), background var(--motion-base), transform var(--motion-fast); }
+.tutorial__dots button:hover { transform: scaleY(1.8); }
+.toast { transition: opacity var(--motion-base) var(--ease-smooth), transform var(--motion-base) var(--ease-out), box-shadow var(--motion-base); }
+.toast.show { box-shadow: 0 12px 32px rgba(0,0,0,.28); }
+
+@keyframes ui-rise-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ui-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes title-reveal { from { opacity: 0; letter-spacing: -.085em; transform: translateY(10px) scale(.975); } to { opacity: 1; letter-spacing: -.045em; transform: translateY(0) scale(1); } }
+@keyframes start-arrive { from { opacity: 0; transform: skewX(-7deg) translateY(16px) scale(.94); } to { opacity: 1; transform: skewX(-7deg) translateY(0) scale(1); } }
+@keyframes selected-settle { 0% { transform: scale(.975); } 65% { transform: scale(1.015); } 100% { transform: scale(1); } }
+@keyframes swatch-pop { 0% { transform: scale(.82); } 65% { transform: scale(1.2); } 100% { transform: scale(1.08); } }
+@keyframes hud-from-left { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes hud-from-right { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes route-drop { from { opacity: 0; transform: translate(-50%, -12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes hint-arrive { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes touch-rise { from { opacity: 0; transform: translateY(18px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes route-pulse { 50% { opacity: .55; box-shadow: 0 0 4px var(--orange); } }
+@keyframes modal-enter { from { opacity: 0; transform: translateY(18px) scale(.975); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes tutorial-step-in { from { opacity: 0; transform: translateX(9px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes key-float-in { from { opacity: 0; transform: translateY(8px) scale(.92); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+html[data-quality='low'] { --motion-fast: 110ms; --motion-base: 220ms; --motion-slow: 360ms; }
 html[data-quality='low'] .grain { display: none; }
+html[data-quality='low'] .route-chip i { animation: none; }
 html[data-quality='low'] .vignette { box-shadow: inset 0 0 54px rgba(7, 12, 10, calc(.16 + var(--impact) * .4)); }
 html[data-quality='low'] :is(.garage-card, .online-card, .map-select, .drive-settings, .route-chip, .multiplayer-hud, .locator-bar, .icon-button, .pause, .start-button, .touch-controls button, .mobile-quick-actions button, .tutorial) { backdrop-filter: none; }
 
@@ -344,4 +449,4 @@ html[data-quality='low'] :is(.garage-card, .online-card, .map-select, .drive-set
   .speedometer { bottom: calc(116px + env(safe-area-inset-bottom)); }
 }
 
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; transition-delay: 0ms !important; } }
