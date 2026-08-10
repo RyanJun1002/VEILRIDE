@@ -16,13 +16,14 @@ export class VehiclePreviewRenderer {
   private readonly platformMaterial = new THREE.MeshBasicMaterial({
     color: 0xb7bdb9,
     transparent: true,
-    opacity: 0.34,
+    opacity: 0.1,
     depthWrite: false,
   });
-  private readonly hemi = new THREE.HemisphereLight(0xcfe4d8, 0x35443b, 2.65);
-  private readonly key = new THREE.DirectionalLight(0xffdfb5, 5.8);
-  private readonly fill = new THREE.DirectionalLight(0xffffff, 2.25);
-  private readonly rim = new THREE.DirectionalLight(0x9bd9bc, 3.55);
+  private readonly hemi = new THREE.HemisphereLight(0xcfe4d8, 0x35443b, 2.9);
+  private readonly key = new THREE.DirectionalLight(0xffdfb5, 6.2);
+  private readonly fill = new THREE.DirectionalLight(0xffffff, 3.05);
+  private readonly rim = new THREE.DirectionalLight(0x9bd9bc, 3.8);
+  private readonly ambient = new THREE.AmbientLight(0xffffff, 1.15);
   private vehicle: THREE.Group | null = null;
   private active = true;
   private lastFrame = 0;
@@ -41,27 +42,27 @@ export class VehiclePreviewRenderer {
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, this.lowPower ? 1.25 : 1.75));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.22;
+    this.renderer.toneMappingExposure = 1.29;
     this.renderer.shadowMap.enabled = !this.lowPower;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this.camera.position.set(7.2, 3.8, 8.8);
     this.camera.lookAt(0, 1.05, 0);
-    this.scene.add(this.pivot, this.hemi, this.key, this.fill, this.rim);
+    this.scene.add(this.pivot, this.hemi, this.key, this.fill, this.rim, this.ambient);
     this.key.position.set(-5, 8, 4);
     this.key.castShadow = !this.lowPower;
     this.key.shadow.mapSize.set(1024, 1024);
     this.fill.position.set(4.5, 5.5, 8.5);
     this.rim.position.set(6, 4, -5);
 
-    const platform = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 5.5, 0.12, this.lowPower ? 32 : 64), this.platformMaterial);
-    platform.position.y = -0.06;
+    const platform = new THREE.Mesh(new THREE.CylinderGeometry(3.08, 3.28, 0.07, this.lowPower ? 32 : 64), this.platformMaterial);
+    platform.position.y = -0.04;
     platform.receiveShadow = !this.lowPower;
     this.scene.add(platform);
 
     const shadow = new THREE.Mesh(
-      new THREE.CircleGeometry(5.05, this.lowPower ? 32 : 64),
-      new THREE.ShadowMaterial({ color: 0x000000, opacity: 0.22 }),
+      new THREE.CircleGeometry(3.02, this.lowPower ? 32 : 64),
+      new THREE.ShadowMaterial({ color: 0x000000, opacity: 0.14 }),
     );
     shadow.rotation.x = -Math.PI / 2;
     shadow.position.y = 0.012;
@@ -85,7 +86,7 @@ export class VehiclePreviewRenderer {
     vehicle.scale.setScalar(scale);
     const fittedBox = new THREE.Box3().setFromObject(vehicle);
     const center = fittedBox.getCenter(new THREE.Vector3());
-    vehicle.position.set(-center.x, -fittedBox.min.y + 0.13, -center.z);
+    vehicle.position.set(-center.x, -fittedBox.min.y + 0.055, -center.z);
     vehicle.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return;
       object.castShadow = !this.lowPower;
@@ -136,6 +137,7 @@ export class VehiclePreviewRenderer {
     const targetLocalX = THREE.MathUtils.clamp(innerWidth * 0.5 - rect.left, width * 0.18, width * 0.82);
     const shiftPixels = width * 0.5 - targetLocalX;
     this.camera.filmOffset = shiftPixels / width * this.camera.getFilmWidth();
+    this.canvas.parentElement?.style.setProperty('--vehicle-screen-x', `${targetLocalX / width * 100}%`);
     this.camera.updateProjectionMatrix();
   }
 
