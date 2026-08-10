@@ -57,8 +57,23 @@ const onlineLabel = document.querySelector<HTMLElement>('#onlineLabel')!;
 const mapSelectLabel = document.querySelector<HTMLElement>('#mapSelectLabel')!;
 const selectedMapLabel = document.querySelector<HTMLElement>('#selectedMapLabel')!;
 const routeName = document.querySelector<HTMLElement>('#routeName')!;
+const tutorial = document.querySelector<HTMLElement>('#tutorial')!;
+const tutorialButton = document.querySelector<HTMLButtonElement>('#tutorialButton')!;
+const tutorialButtonLabel = document.querySelector<HTMLElement>('#tutorialButtonLabel')!;
+const tutorialMode = document.querySelector<HTMLElement>('#tutorialMode')!;
+const tutorialProgress = document.querySelector<HTMLElement>('#tutorialProgress')!;
+const tutorialVisual = document.querySelector<HTMLElement>('#tutorialVisual')!;
+const tutorialKicker = document.querySelector<HTMLElement>('#tutorialKicker')!;
+const tutorialTitle = document.querySelector<HTMLElement>('#tutorialTitle')!;
+const tutorialBody = document.querySelector<HTMLElement>('#tutorialBody')!;
+const tutorialDots = document.querySelector<HTMLElement>('#tutorialDots')!;
+const tutorialSkipButton = document.querySelector<HTMLButtonElement>('#tutorialSkipButton')!;
+const tutorialBackButton = document.querySelector<HTMLButtonElement>('#tutorialBackButton')!;
+const tutorialNextButton = document.querySelector<HTMLButtonElement>('#tutorialNextButton')!;
 
 type Language = 'ko' | 'en';
+type TutorialDevice = 'desktop' | 'mobile';
+type TutorialVisual = 'pc-drive' | 'pc-steer' | 'pc-boost' | 'pc-tools' | 'mobile-drive' | 'mobile-actions' | 'mobile-tools' | 'mobile-ready';
 
 const WORLD_MAP_DETAILS: Record<WorldMapId, {
   name: string;
@@ -105,6 +120,66 @@ const UI_COPY = {
     online: 'ONLINE', onlineConnecting: 'Connecting online count', onlineTitle: (count: number) => `${count} player${count === 1 ? '' : 's'} online`,
   },
 } as const;
+
+const TUTORIAL_COPY: Record<Language, {
+  launch: string;
+  skip: string;
+  back: string;
+  next: string;
+  drive: string;
+  done: string;
+  progressLabel: string;
+  modes: Record<TutorialDevice, string>;
+  steps: Record<TutorialDevice, Array<{ kicker: string; title: string; body: string; visual: TutorialVisual }>>;
+}> = {
+  ko: {
+    launch: '튜토리얼 다시 보기', skip: '건너뛰기', back: '이전', next: '다음', drive: '주행 시작', done: '확인', progressLabel: '튜토리얼 단계',
+    modes: { desktop: 'PC GUIDE', mobile: 'MOBILE GUIDE' },
+    steps: {
+      desktop: [
+        { kicker: 'BASIC CONTROL', title: '차를 움직여 보세요', body: 'W를 누르면 전진하고 S를 누르면 감속하거나 후진합니다. W만으로는 90 KM/H까지 가속됩니다.', visual: 'pc-drive' },
+        { kicker: 'STEERING', title: '부드럽게 방향을 잡으세요', body: 'A와 D로 조향합니다. SPACE는 핸드브레이크이며 급한 감속이나 자세를 바로잡을 때 사용하세요.', visual: 'pc-steer' },
+        { kicker: 'BOOST', title: '90 KM/H를 넘어서세요', body: 'W를 누른 상태에서 SHIFT를 함께 누르면 속도 제한이 해제되어 차량의 최고속도까지 가속합니다.', visual: 'pc-boost' },
+        { kicker: 'QUICK TOOLS', title: '주행 중 빠른 기능', body: 'C는 카메라, R은 도로 복귀, Q는 시간대, E는 계절을 바꿉니다. ESC로 언제든 일시정지할 수 있습니다.', visual: 'pc-tools' },
+      ],
+      mobile: [
+        { kicker: 'JOYSTICK', title: '한 손으로 주행하세요', body: '왼쪽 조이스틱을 위로 밀면 전진, 아래로 밀면 감속과 후진입니다. 좌우로 움직이면 부드럽게 조향합니다.', visual: 'mobile-drive' },
+        { kicker: 'BOOST & HANDBRAKE', title: '가속과 제동을 제어하세요', body: 'BOOST 스위치는 한 번 누르면 켜진 상태로 유지됩니다. 급하게 멈추거나 자세를 잡을 때는 HB 버튼을 누르세요.', visual: 'mobile-actions' },
+        { kicker: 'QUICK TOOLS', title: '상단 아이콘을 기억하세요', body: '우측 상단에서 카메라를 바꾸거나 도로로 즉시 복귀할 수 있습니다. Ⅱ 버튼은 일시정지입니다.', visual: 'mobile-tools' },
+        { kicker: 'READY', title: '이제 출발할 준비가 됐어요', body: '조이스틱과 버튼은 동시에 누를 수 있습니다. 화면을 가리지 않도록 손가락은 양쪽 아래에 두는 것이 좋습니다.', visual: 'mobile-ready' },
+      ],
+    },
+  },
+  en: {
+    launch: 'VIEW TUTORIAL', skip: 'SKIP', back: 'BACK', next: 'NEXT', drive: 'START DRIVING', done: 'DONE', progressLabel: 'Tutorial step',
+    modes: { desktop: 'PC GUIDE', mobile: 'MOBILE GUIDE' },
+    steps: {
+      desktop: [
+        { kicker: 'BASIC CONTROL', title: 'Get the vehicle moving', body: 'Hold W to accelerate and S to slow down or reverse. W alone takes you up to 90 KM/H.', visual: 'pc-drive' },
+        { kicker: 'STEERING', title: 'Guide it smoothly', body: 'Use A and D to steer. SPACE applies the handbrake for urgent stops and quick corrections.', visual: 'pc-steer' },
+        { kicker: 'BOOST', title: 'Go beyond 90 KM/H', body: 'Hold SHIFT together with W to unlock the speed limit and accelerate toward the vehicle\'s top speed.', visual: 'pc-boost' },
+        { kicker: 'QUICK TOOLS', title: 'Useful driving shortcuts', body: 'C changes camera, R returns to the road, Q changes time, and E changes season. ESC pauses the journey.', visual: 'pc-tools' },
+      ],
+      mobile: [
+        { kicker: 'JOYSTICK', title: 'Drive with one thumb', body: 'Push the left joystick up to accelerate, down to slow or reverse, and sideways to steer smoothly.', visual: 'mobile-drive' },
+        { kicker: 'BOOST & HANDBRAKE', title: 'Control speed and grip', body: 'Tap BOOST once to keep it enabled. Hold the HB button for an urgent stop or a quick correction.', visual: 'mobile-actions' },
+        { kicker: 'QUICK TOOLS', title: 'Remember the top icons', body: 'Use the top-right icons to change camera or return to the road. The Ⅱ button pauses the game.', visual: 'mobile-tools' },
+        { kicker: 'READY', title: 'You are ready to drive', body: 'The joystick and action buttons work together. Keep your thumbs near the lower corners to preserve the view.', visual: 'mobile-ready' },
+      ],
+    },
+  },
+};
+
+const TUTORIAL_VISUALS: Record<TutorialVisual, string> = {
+  'pc-drive': '<div class="tutorial-key-grid tutorial-key-grid--drive"><kbd>W</kbd><kbd>S</kbd></div><div class="tutorial-road-line"><i></i></div>',
+  'pc-steer': '<div class="tutorial-key-grid tutorial-key-grid--steer"><kbd>A</kbd><kbd>D</kbd><kbd class="tutorial-key-wide">SPACE</kbd></div><div class="tutorial-steer-arc"><i></i></div>',
+  'pc-boost': '<div class="tutorial-key-combo"><kbd>W</kbd><b>+</b><kbd class="tutorial-key-wide">SHIFT</kbd></div><div class="tutorial-speed-demo"><span>090</span><i></i><strong>MAX</strong></div>',
+  'pc-tools': '<div class="tutorial-tool-keys"><span><kbd>C</kbd><small>CAMERA</small></span><span><kbd>R</kbd><small>RESET</small></span><span><kbd>Q</kbd><small>TIME</small></span><span><kbd>E</kbd><small>SEASON</small></span><span><kbd>ESC</kbd><small>PAUSE</small></span></div>',
+  'mobile-drive': '<div class="tutorial-phone-control"><div class="tutorial-joystick-demo"><i></i><b>▲</b><b>▼</b><b>◀</b><b>▶</b></div><span>DRIVE</span></div>',
+  'mobile-actions': '<div class="tutorial-mobile-actions"><div class="tutorial-boost-demo"><i><b></b></i><small>BOOST ON</small></div><div class="tutorial-hb-demo"><strong>HB</strong><small>HANDBRAKE</small></div></div>',
+  'mobile-tools': '<div class="tutorial-mobile-tools"><span><svg viewBox="0 0 24 24"><path d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4z"/><circle cx="12" cy="13" r="3.3"/></svg><small>CAMERA</small></span><span><svg viewBox="0 0 24 24"><path d="M6 7h9.5a4.5 4.5 0 0 1 0 9H9"/><path d="m9 3-4 4 4 4"/></svg><small>RESET</small></span><span><b>Ⅱ</b><small>PAUSE</small></span></div>',
+  'mobile-ready': '<div class="tutorial-ready-road"><i></i><i></i><div class="tutorial-ready-car"></div></div><strong class="tutorial-ready-mark">READY</strong>',
+};
 
 function loadLanguage(): Language {
   return localStorage.getItem('mistline-language') === 'en' ? 'en' : 'ko';
@@ -165,6 +240,10 @@ let joystickThrottle = 0;
 let joystickBrake = 0;
 let running = false;
 let paused = false;
+let tutorialDevice: TutorialDevice = 'desktop';
+let tutorialIndex = 0;
+let tutorialStartsDrive = false;
+let tutorialPreviousFocus: HTMLElement | null = null;
 let startedAt = 0;
 let lastTime = performance.now();
 let hitFlash = 0;
@@ -255,6 +334,8 @@ function applyLanguage() {
   document.querySelector<HTMLButtonElement>('#resumeButton')!.textContent = copy.resume;
   document.querySelector<HTMLButtonElement>('#restartButton')!.textContent = copy.restart;
   document.querySelector<HTMLButtonElement>('#mainMenuButton')!.textContent = copy.mainMenu;
+  tutorialButtonLabel.textContent = TUTORIAL_COPY[language].launch;
+  if (!tutorial.classList.contains('is-hidden')) renderTutorial();
   networkStatus.textContent = multiplayer.active
     ? localizeNetworkMessage(lastNetworkMessage)
     : copy.soloDrive;
@@ -838,6 +919,80 @@ function resetTouchJoystick() {
   if (touchJoystickKnob) touchJoystickKnob.style.transform = 'translate(0px, 0px)';
 }
 
+function detectTutorialDevice(): TutorialDevice {
+  return matchMedia('(pointer: coarse)').matches || innerWidth <= 720 ? 'mobile' : 'desktop';
+}
+
+function tutorialStorageKey(device = tutorialDevice) {
+  return `mistline-tutorial-v1-${device}`;
+}
+
+function isTutorialOpen() {
+  return !tutorial.classList.contains('is-hidden');
+}
+
+function renderTutorial() {
+  const copy = TUTORIAL_COPY[language];
+  const steps = copy.steps[tutorialDevice];
+  const step = steps[tutorialIndex];
+  const isLast = tutorialIndex === steps.length - 1;
+  tutorialMode.textContent = copy.modes[tutorialDevice];
+  tutorialProgress.textContent = `${String(tutorialIndex + 1).padStart(2, '0')} / ${String(steps.length).padStart(2, '0')}`;
+  tutorialKicker.textContent = step.kicker;
+  tutorialTitle.textContent = step.title;
+  tutorialBody.textContent = step.body;
+  tutorialVisual.innerHTML = TUTORIAL_VISUALS[step.visual];
+  tutorialSkipButton.textContent = copy.skip;
+  tutorialBackButton.textContent = copy.back;
+  tutorialBackButton.disabled = tutorialIndex === 0;
+  tutorialNextButton.textContent = isLast ? (tutorialStartsDrive ? copy.drive : copy.done) : copy.next;
+  tutorialDots.setAttribute('aria-label', copy.progressLabel);
+  tutorialDots.innerHTML = steps.map((_, index) => (
+    `<button type="button" class="${index === tutorialIndex ? 'is-active' : ''}" aria-label="${copy.progressLabel} ${index + 1}" ${index === tutorialIndex ? 'aria-current="step"' : ''}></button>`
+  )).join('');
+  tutorialDots.querySelectorAll<HTMLButtonElement>('button').forEach((button, index) => {
+    button.addEventListener('click', () => {
+      tutorialIndex = index;
+      renderTutorial();
+    });
+  });
+}
+
+function openTutorial(startsDrive: boolean) {
+  tutorialDevice = detectTutorialDevice();
+  tutorialIndex = 0;
+  tutorialStartsDrive = startsDrive;
+  tutorialPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  tutorial.classList.remove('is-hidden');
+  renderTutorial();
+  requestAnimationFrame(() => tutorialNextButton.focus());
+}
+
+function closeTutorial(completed: boolean) {
+  const shouldStart = tutorialStartsDrive && completed;
+  if (completed) localStorage.setItem(tutorialStorageKey(), 'done');
+  tutorial.classList.add('is-hidden');
+  tutorialStartsDrive = false;
+  if (shouldStart) start();
+  else tutorialPreviousFocus?.focus();
+}
+
+function nextTutorialStep() {
+  const steps = TUTORIAL_COPY[language].steps[tutorialDevice];
+  if (tutorialIndex < steps.length - 1) {
+    tutorialIndex += 1;
+    renderTutorial();
+    return;
+  }
+  closeTutorial(true);
+}
+
+function requestStart() {
+  tutorialDevice = detectTutorialDevice();
+  if (localStorage.getItem(tutorialStorageKey()) === 'done') start();
+  else openTutorial(true);
+}
+
 function start() {
   running = true;
   paused = false;
@@ -899,7 +1054,15 @@ function flashToast(message: string) {
   setTimeout(() => toast.classList.remove('show'), 1600);
 }
 
-document.querySelector('#startButton')!.addEventListener('click', start);
+document.querySelector('#startButton')!.addEventListener('click', requestStart);
+tutorialButton.addEventListener('click', () => openTutorial(false));
+tutorialSkipButton.addEventListener('click', () => closeTutorial(true));
+tutorialBackButton.addEventListener('click', () => {
+  if (tutorialIndex === 0) return;
+  tutorialIndex -= 1;
+  renderTutorial();
+});
+tutorialNextButton.addEventListener('click', nextTutorialStep);
 document.querySelector('#pauseButton')!.addEventListener('click', () => setPause(true));
 document.querySelector('#mobileCameraButton')?.addEventListener('click', () => {
   view.cycleCamera();
@@ -919,6 +1082,16 @@ document.querySelector('#mainMenuButton')!.addEventListener('click', returnToMai
 
 addEventListener('keydown', (event) => {
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+  if (isTutorialOpen()) {
+    if (['ArrowLeft', 'ArrowRight', 'Escape'].includes(event.code)) event.preventDefault();
+    if (event.code === 'Escape') closeTutorial(false);
+    if (event.code === 'ArrowRight' && !event.repeat) nextTutorialStep();
+    if (event.code === 'ArrowLeft' && !event.repeat && tutorialIndex > 0) {
+      tutorialIndex -= 1;
+      renderTutorial();
+    }
+    return;
+  }
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(event.code)) event.preventDefault();
   if (event.code === 'Escape' && !event.repeat) setPause(!paused);
   if (event.code === 'KeyC' && !event.repeat) {
