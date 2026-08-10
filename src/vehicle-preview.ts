@@ -87,6 +87,9 @@ export class VehiclePreviewRenderer {
     const fittedBox = new THREE.Box3().setFromObject(vehicle);
     const center = fittedBox.getCenter(new THREE.Vector3());
     vehicle.position.set(-center.x, -fittedBox.min.y + 0.055, -center.z);
+    const centeredBox = new THREE.Box3().setFromObject(vehicle);
+    const centeredVehicle = centeredBox.getCenter(new THREE.Vector3());
+    this.camera.lookAt(0, centeredVehicle.y, 0);
     vehicle.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return;
       object.castShadow = !this.lowPower;
@@ -131,13 +134,8 @@ export class VehiclePreviewRenderer {
     const height = Math.max(1, this.canvas.clientHeight);
     this.renderer.setSize(width, height, false);
     this.camera.aspect = width / height;
-    // Keep the showroom vehicle on the road centerline in the full-page scene,
-    // even though the preview canvas begins to the right of the selector panel.
-    const rect = this.canvas.getBoundingClientRect();
-    const targetLocalX = THREE.MathUtils.clamp(innerWidth * 0.5 - rect.left, width * 0.18, width * 0.82);
-    const shiftPixels = width * 0.5 - targetLocalX;
-    this.camera.filmOffset = shiftPixels / width * this.camera.getFilmWidth();
-    this.canvas.parentElement?.style.setProperty('--vehicle-screen-x', `${targetLocalX / width * 100}%`);
+    this.camera.filmOffset = 0;
+    this.canvas.parentElement?.style.setProperty('--vehicle-screen-x', '50%');
     this.camera.updateProjectionMatrix();
   }
 
