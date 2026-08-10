@@ -1412,6 +1412,7 @@ export function createCar(color: number, player = false, customization?: CarCust
   if (appearance.model === 'metro-bus') return createBus(appearance, player);
   if (appearance.model === 'storm-moto') return createMotorcycle(appearance, player);
   if (appearance.model === 'trail-pickup') return createPickup(appearance, player);
+  const isApex = appearance.model === 'apex-r';
   const detailed = player || Boolean(customization);
   const group = new THREE.Group();
   const paint = new THREE.MeshPhysicalMaterial({ color: appearance.color, metalness: 0.38, roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.12 });
@@ -1439,165 +1440,171 @@ export function createCar(color: number, player = false, customization?: CarCust
   const red = new THREE.MeshStandardMaterial({ color: 0x8f0805, emissive: 0xff1c12, emissiveIntensity: 1.45, roughness: 0.2 });
   const amber = new THREE.MeshStandardMaterial({ color: 0xffaa3a, emissive: 0xff6a13, emissiveIntensity: 1.7, roughness: 0.2 });
 
-  const body = roundedBox(2.02, 0.56, 4.25, 0.36, paint);
-  body.position.y = 0.48;
+  const body = roundedBox(isApex ? 2.18 : 2.02, isApex ? 0.46 : 0.56, isApex ? 4.72 : 4.25, isApex ? 0.4 : 0.36, paint);
+  body.position.y = isApex ? 0.43 : 0.48;
   group.add(body);
 
-  const lowerBody = roundedBox(1.92, 0.19, 4.08, 0.22, carbon);
-  lowerBody.position.y = 0.25;
+  const lowerBody = roundedBox(isApex ? 2.08 : 1.92, isApex ? 0.16 : 0.19, isApex ? 4.62 : 4.08, isApex ? 0.27 : 0.22, carbon);
+  lowerBody.position.y = isApex ? 0.22 : 0.25;
   group.add(lowerBody);
 
-  const hood = roundedBox(1.9, 0.18, 1.45, 0.25, paint);
-  hood.position.set(0, 0.85, -1.27);
-  hood.rotation.x = -0.035;
+  const hood = roundedBox(isApex ? 2.04 : 1.9, isApex ? 0.11 : 0.18, isApex ? 1.78 : 1.45, isApex ? 0.32 : 0.25, paint);
+  hood.position.set(0, isApex ? 0.72 : 0.85, isApex ? -1.5 : -1.27);
+  hood.rotation.x = isApex ? -0.055 : -0.035;
   group.add(hood);
 
   for (const side of [-1, 1]) {
-    const frontHaunch = roundedBox(0.52, 0.2, 1.08, 0.16, paint);
-    frontHaunch.position.set(side * 0.72, 0.76, -1.28);
+    const frontHaunch = roundedBox(isApex ? 0.62 : 0.52, isApex ? 0.17 : 0.2, isApex ? 1.32 : 1.08, isApex ? 0.22 : 0.16, paint);
+    frontHaunch.position.set(side * (isApex ? 0.78 : 0.72), isApex ? 0.67 : 0.76, isApex ? -1.5 : -1.28);
     frontHaunch.rotation.x = -0.025;
-    const rearHaunch = roundedBox(0.56, 0.22, 1.18, 0.17, paint);
-    rearHaunch.position.set(side * 0.71, 0.78, 1.3);
+    const rearHaunch = roundedBox(isApex ? 0.67 : 0.56, isApex ? 0.2 : 0.22, isApex ? 1.38 : 1.18, isApex ? 0.23 : 0.17, paint);
+    rearHaunch.position.set(side * (isApex ? 0.78 : 0.71), isApex ? 0.69 : 0.78, isApex ? 1.5 : 1.3);
     rearHaunch.rotation.x = 0.02;
     group.add(frontHaunch, rearHaunch);
   }
 
-  const rearDeck = roundedBox(1.72, 0.13, 0.8, 0.18, paint);
-  rearDeck.position.set(0, 0.88, 1.52);
+  const rearDeck = roundedBox(isApex ? 1.94 : 1.72, isApex ? 0.11 : 0.13, isApex ? 1.02 : 0.8, isApex ? 0.28 : 0.18, paint);
+  rearDeck.position.set(0, isApex ? 0.75 : 0.88, isApex ? 1.72 : 1.52);
   rearDeck.rotation.x = 0.025;
   group.add(rearDeck);
 
   const cabin = new THREE.Group();
   if (detailed) {
     const windshield = createGlassPanel([
-      [-0.78, 0.96, -0.76],
-      [0.78, 0.96, -0.76],
-      [0.64, 1.36, -0.43],
-      [-0.64, 1.36, -0.43],
+      [isApex ? -0.86 : -0.78, isApex ? 0.82 : 0.96, isApex ? -0.94 : -0.76],
+      [isApex ? 0.86 : 0.78, isApex ? 0.82 : 0.96, isApex ? -0.94 : -0.76],
+      [isApex ? 0.67 : 0.64, isApex ? 1.2 : 1.36, isApex ? -0.38 : -0.43],
+      [isApex ? -0.67 : -0.64, isApex ? 1.2 : 1.36, isApex ? -0.38 : -0.43],
     ], glass);
     const rearGlass = createGlassPanel([
-      [-0.64, 1.36, 0.65],
-      [0.64, 1.36, 0.65],
-      [0.78, 0.96, 0.98],
-      [-0.78, 0.96, 0.98],
+      [isApex ? -0.67 : -0.64, isApex ? 1.2 : 1.36, isApex ? 0.48 : 0.65],
+      [isApex ? 0.67 : 0.64, isApex ? 1.2 : 1.36, isApex ? 0.48 : 0.65],
+      [isApex ? 0.86 : 0.78, isApex ? 0.82 : 0.96, isApex ? 1.16 : 0.98],
+      [isApex ? -0.86 : -0.78, isApex ? 0.82 : 0.96, isApex ? 1.16 : 0.98],
     ], glass);
     cabin.add(windshield, rearGlass);
 
     for (const side of [-1, 1]) {
-      const x = side * 0.81;
+      const x = side * (isApex ? 0.89 : 0.81);
       const frontSideGlass = createGlassPanel([
-        [x, 0.97, -0.68],
-        [x, 1.34, -0.4],
-        [x, 1.34, 0.14],
-        [x, 0.97, 0.14],
+        [x, isApex ? 0.83 : 0.97, isApex ? -0.85 : -0.68],
+        [x, isApex ? 1.18 : 1.34, isApex ? -0.36 : -0.4],
+        [x, isApex ? 1.18 : 1.34, isApex ? 0.12 : 0.14],
+        [x, isApex ? 0.83 : 0.97, isApex ? 0.12 : 0.14],
       ], glass);
       const quarterGlass = createGlassPanel([
-        [x, 0.97, 0.21],
-        [x, 1.34, 0.21],
-        [x, 1.31, 0.57],
-        [x, 0.97, 0.86],
+        [x, isApex ? 0.83 : 0.97, isApex ? 0.19 : 0.21],
+        [x, isApex ? 1.18 : 1.34, isApex ? 0.19 : 0.21],
+        [x, isApex ? 1.15 : 1.31, isApex ? 0.54 : 0.57],
+        [x, isApex ? 0.83 : 0.97, isApex ? 1.03 : 0.86],
       ], glass);
       cabin.add(frontSideGlass, quarterGlass);
     }
   } else {
-    const simpleCabin = roundedBox(1.65, 0.68, 1.92, 0.34, glass);
-    simpleCabin.position.set(0, 0.95, 0.12);
-    simpleCabin.scale.set(0.95, 1, 0.92);
+    const simpleCabin = roundedBox(isApex ? 1.76 : 1.65, isApex ? 0.48 : 0.68, isApex ? 2.12 : 1.92, isApex ? 0.38 : 0.34, glass);
+    simpleCabin.position.set(0, isApex ? 0.82 : 0.95, isApex ? 0.08 : 0.12);
+    simpleCabin.scale.set(isApex ? 0.98 : 0.95, 1, isApex ? 0.96 : 0.92);
     cabin.add(simpleCabin);
   }
   group.add(cabin);
 
-  const roof = roundedBox(1.52, 0.08, 1.2, 0.22, paint);
-  roof.position.set(0, 1.39, 0.18);
+  const roof = roundedBox(isApex ? 1.58 : 1.52, isApex ? 0.055 : 0.08, isApex ? 1.04 : 1.2, isApex ? 0.3 : 0.22, paint);
+  roof.position.set(0, isApex ? 1.22 : 1.39, isApex ? 0.08 : 0.18);
   group.add(roof);
 
   const exteriorCabinParts: THREE.Object3D[] = [];
   if (detailed) {
     const windshieldCowl = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.045, 0.075), dark);
-    windshieldCowl.position.set(0, 0.96, -0.755);
+    windshieldCowl.position.set(0, isApex ? 0.82 : 0.96, isApex ? -0.935 : -0.755);
     const rearGlassBase = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.045, 0.075), dark);
-    rearGlassBase.position.set(0, 0.96, 0.975);
+    rearGlassBase.position.set(0, isApex ? 0.82 : 0.96, isApex ? 1.15 : 0.975);
     const windshieldTopTrim = new THREE.Mesh(new THREE.BoxGeometry(1.32, 0.04, 0.07), dark);
-    windshieldTopTrim.position.set(0, 1.355, -0.43);
+    windshieldTopTrim.position.set(0, isApex ? 1.195 : 1.355, isApex ? -0.38 : -0.43);
     const rearGlassTopTrim = new THREE.Mesh(new THREE.BoxGeometry(1.32, 0.04, 0.07), dark);
-    rearGlassTopTrim.position.set(0, 1.355, 0.65);
+    rearGlassTopTrim.position.set(0, isApex ? 1.195 : 1.355, isApex ? 0.48 : 0.65);
     group.add(windshieldCowl, rearGlassBase, windshieldTopTrim, rearGlassTopTrim);
     exteriorCabinParts.push(windshieldCowl, rearGlassBase, windshieldTopTrim, rearGlassTopTrim);
   }
   for (const side of [-1, 1]) {
-    const beltTrim = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.045, 1.72), chrome);
-    beltTrim.position.set(side * 0.835, 0.94, 0.13);
-    const aPillar = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.58, 0.075), dark);
-    aPillar.position.set(side * 0.79, 1.15, -0.66);
-    aPillar.rotation.x = 0.34;
-    const bPillar = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.55, 0.075), dark);
-    bPillar.position.set(side * 0.81, 1.13, 0.18);
-    const cPillar = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.54, 0.09), dark);
-    cPillar.position.set(side * 0.77, 1.14, 0.72);
-    cPillar.rotation.x = -0.28;
-    const windowTopTrim = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.04, 1.05), dark);
-    windowTopTrim.position.set(side * 0.805, 1.355, 0.13);
-    const doorLine = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.018, 1.45), dark);
-    doorLine.position.set(side * 1.012, 0.58, 0.18);
+    const beltTrim = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.045, isApex ? 2.03 : 1.72), chrome);
+    beltTrim.position.set(side * (isApex ? 0.915 : 0.835), isApex ? 0.81 : 0.94, isApex ? 0.1 : 0.13);
+    const aPillar = new THREE.Mesh(new THREE.BoxGeometry(0.06, isApex ? 0.5 : 0.58, 0.075), dark);
+    aPillar.position.set(side * (isApex ? 0.84 : 0.79), isApex ? 1.01 : 1.15, isApex ? -0.82 : -0.66);
+    aPillar.rotation.x = isApex ? 0.52 : 0.34;
+    const bPillar = new THREE.Mesh(new THREE.BoxGeometry(0.055, isApex ? 0.43 : 0.55, 0.075), dark);
+    bPillar.position.set(side * (isApex ? 0.89 : 0.81), isApex ? 1.0 : 1.13, isApex ? 0.15 : 0.18);
+    const cPillar = new THREE.Mesh(new THREE.BoxGeometry(0.065, isApex ? 0.5 : 0.54, 0.09), dark);
+    cPillar.position.set(side * (isApex ? 0.84 : 0.77), isApex ? 1.0 : 1.14, isApex ? 0.84 : 0.72);
+    cPillar.rotation.x = isApex ? -0.48 : -0.28;
+    const windowTopTrim = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.04, isApex ? 1.22 : 1.05), dark);
+    windowTopTrim.position.set(side * (isApex ? 0.885 : 0.805), isApex ? 1.195 : 1.355, isApex ? 0.1 : 0.13);
+    const doorLine = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.018, isApex ? 1.62 : 1.45), dark);
+    doorLine.position.set(side * (isApex ? 1.092 : 1.012), isApex ? 0.53 : 0.58, isApex ? 0.12 : 0.18);
     const doorHandle = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.045, 0.25), chrome);
-    doorHandle.position.set(side * 1.025, 0.8, 0.43);
-    const sideSkirt = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.12, 2.65), carbon);
-    sideSkirt.position.set(side * 0.985, 0.28, 0.05);
-    const sideIntake = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.25, 0.48), lightHousing);
-    sideIntake.position.set(side * 1.018, 0.55, 0.9);
+    doorHandle.position.set(side * (isApex ? 1.105 : 1.025), isApex ? 0.72 : 0.8, isApex ? 0.37 : 0.43);
+    const sideSkirt = new THREE.Mesh(new THREE.BoxGeometry(isApex ? 0.14 : 0.11, isApex ? 0.1 : 0.12, isApex ? 3.12 : 2.65), carbon);
+    sideSkirt.position.set(side * (isApex ? 1.065 : 0.985), isApex ? 0.23 : 0.28, 0.05);
+    const sideIntake = new THREE.Mesh(new THREE.BoxGeometry(0.035, isApex ? 0.33 : 0.25, isApex ? 0.66 : 0.48), lightHousing);
+    sideIntake.position.set(side * (isApex ? 1.098 : 1.018), isApex ? 0.53 : 0.55, isApex ? 0.98 : 0.9);
     sideIntake.rotation.x = -0.08;
     group.add(beltTrim, aPillar, bPillar, cPillar, windowTopTrim, doorLine, doorHandle, sideSkirt, sideIntake);
     exteriorCabinParts.push(beltTrim, aPillar, bPillar, cPillar, windowTopTrim);
 
     const mirrorMount = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.055, 0.08), dark);
-    mirrorMount.position.set(side * 0.92, 1.04, -0.53);
+    mirrorMount.position.set(side * (isApex ? 0.99 : 0.92), isApex ? 0.9 : 1.04, isApex ? -0.68 : -0.53);
     const mirrorHousing = new THREE.Mesh(new THREE.SphereGeometry(0.13, LOW_POWER_MODE ? 16 : 28, LOW_POWER_MODE ? 10 : 18), paint);
-    mirrorHousing.position.set(side * 1.04, 1.08, -0.52);
+    mirrorHousing.position.set(side * (isApex ? 1.12 : 1.04), isApex ? 0.93 : 1.08, isApex ? -0.67 : -0.52);
     mirrorHousing.scale.set(1.15, 0.58, 0.72);
     const mirrorGlass = new THREE.Mesh(new THREE.CircleGeometry(0.087, 16), glass);
-    mirrorGlass.position.set(side * 1.118, 1.085, -0.505);
+    mirrorGlass.position.set(side * (isApex ? 1.2 : 1.118), isApex ? 0.935 : 1.085, isApex ? -0.655 : -0.505);
     mirrorGlass.rotation.y = side * Math.PI / 2;
     mirrorGlass.scale.y = 0.58;
     group.add(mirrorMount, mirrorHousing, mirrorGlass);
   }
 
-  const splitter = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.12, 0.18), dark);
-  splitter.position.set(0, 0.31, -2.16);
+  const frontEndZ = isApex ? -2.4 : -2.16;
+  const rearEndZ = isApex ? 2.4 : 2.16;
+  const splitter = new THREE.Mesh(new THREE.BoxGeometry(isApex ? 2.02 : 1.72, isApex ? 0.09 : 0.12, isApex ? 0.3 : 0.18), dark);
+  splitter.position.set(0, isApex ? 0.24 : 0.31, frontEndZ);
   group.add(splitter);
 
   const frontGrille = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.23, 0.055), lightHousing);
-  frontGrille.position.set(0, 0.48, -2.225);
-  const rearBumper = new THREE.Mesh(new THREE.BoxGeometry(1.78, 0.2, 0.13), carbon);
-  rearBumper.position.set(0, 0.34, 2.16);
+  frontGrille.position.set(0, isApex ? 0.42 : 0.48, frontEndZ - 0.065);
+  const rearBumper = new THREE.Mesh(new THREE.BoxGeometry(isApex ? 1.98 : 1.78, 0.2, 0.13), carbon);
+  rearBumper.position.set(0, isApex ? 0.31 : 0.34, rearEndZ);
   group.add(frontGrille, rearBumper);
 
   if (detailed) {
     for (const x of [-0.48, 0.48]) {
       const hoodVent = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.025, 0.62), carbon);
-      hoodVent.position.set(x, 0.955, -1.22);
-      hoodVent.rotation.x = -0.035;
+      hoodVent.position.set(x, isApex ? 0.79 : 0.955, isApex ? -1.45 : -1.22);
+      hoodVent.rotation.x = isApex ? -0.055 : -0.035;
       group.add(hoodVent);
     }
   }
 
-  const rimGeometry = new THREE.CylinderGeometry(0.22, 0.22, 0.292, VEHICLE_RIM_SEGMENTS);
+  const wheelRadius = isApex ? 0.43 : 0.39;
+  const wheelWidth = isApex ? 0.31 : 0.28;
+  const rimRadius = wheelRadius * 0.565;
+  const rimGeometry = new THREE.CylinderGeometry(rimRadius, rimRadius, wheelWidth + 0.012, VEHICLE_RIM_SEGMENTS);
   const wheels: THREE.Group[] = [];
   const frontWheels: THREE.Group[] = [];
-  for (const x of [-1.01, 1.01]) {
-    for (const z of [-1.32, 1.35]) {
+  for (const x of [isApex ? -1.08 : -1.01, isApex ? 1.08 : 1.01]) {
+    for (const z of [isApex ? -1.53 : -1.32, isApex ? 1.52 : 1.35]) {
       const steeringPivot = new THREE.Group();
-      steeringPivot.position.set(x, 0.43, z);
+      steeringPivot.position.set(x, wheelRadius + 0.04, z);
       const spinPivot = new THREE.Group();
-      const wheel = createRoundedTyre(0.39, 0.28, rubber);
+      const wheel = createRoundedTyre(wheelRadius, wheelWidth, rubber);
       const rim = new THREE.Mesh(rimGeometry, detailed ? gunmetal : chrome);
       rim.rotation.z = Math.PI / 2;
       spinPivot.add(wheel, rim);
       if (detailed) {
         const outward = Math.sign(x) * 0.157;
-        const rimLip = new THREE.Mesh(new THREE.TorusGeometry(0.225, 0.018, 8, 28), chrome);
+        const rimLip = new THREE.Mesh(new THREE.TorusGeometry(rimRadius + 0.005, 0.018, 8, 28), chrome);
         rimLip.rotation.y = Math.PI / 2;
         rimLip.position.x = outward;
-        const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.175, 0.175, 0.018, LOW_POWER_MODE ? 24 : 40), brakeDisc);
+        const discRadius = wheelRadius * 0.45;
+        const disc = new THREE.Mesh(new THREE.CylinderGeometry(discRadius, discRadius, 0.018, LOW_POWER_MODE ? 24 : 40), brakeDisc);
         disc.rotation.z = Math.PI / 2;
         disc.position.x = outward * 0.9;
         const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.025, LOW_POWER_MODE ? 20 : 32), dark);
@@ -1605,7 +1612,7 @@ export function createCar(color: number, player = false, customization?: CarCust
         hub.position.x = outward * 1.08;
         spinPivot.add(disc, rimLip, hub);
         for (let spokeIndex = 0; spokeIndex < 5; spokeIndex++) {
-          const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.028, 0.205), chrome);
+          const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.028, rimRadius * 0.93), chrome);
           spoke.position.x = outward * 1.06;
           spoke.rotation.x = (spokeIndex / 5) * Math.PI;
           spinPivot.add(spoke);
@@ -1622,28 +1629,29 @@ export function createCar(color: number, player = false, customization?: CarCust
   }
 
   for (const x of [-0.67, 0.67]) {
-    const headHousing = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.21, 0.055), lightHousing);
-    headHousing.position.set(x, 0.69, -2.18);
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.07, 0.068), white);
-    head.position.set(x, 0.69, -2.15);
-    const runningLight = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.035, 0.075), white);
-    runningLight.position.set(x, 0.78, -2.17);
+    const lightX = x * (isApex ? 1.08 : 1);
+    const headHousing = new THREE.Mesh(new THREE.BoxGeometry(isApex ? 0.58 : 0.52, isApex ? 0.16 : 0.21, 0.055), lightHousing);
+    headHousing.position.set(lightX, isApex ? 0.6 : 0.69, frontEndZ - 0.02);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(isApex ? 0.46 : 0.4, isApex ? 0.045 : 0.07, 0.068), white);
+    head.position.set(lightX, isApex ? 0.61 : 0.69, frontEndZ + 0.01);
+    const runningLight = new THREE.Mesh(new THREE.BoxGeometry(isApex ? 0.54 : 0.48, 0.035, 0.075), white);
+    runningLight.position.set(lightX, isApex ? 0.68 : 0.78, frontEndZ - 0.01);
     runningLight.rotation.z = x < 0 ? -0.09 : 0.09;
     const tailHousing = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.19, 0.055), lightHousing);
-    tailHousing.position.set(x, 0.7, 2.19);
+    tailHousing.position.set(lightX, isApex ? 0.62 : 0.7, rearEndZ + 0.03);
     const tail = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.055, 0.07), red);
-    tail.position.set(x, 0.72, 2.225);
+    tail.position.set(lightX, isApex ? 0.64 : 0.72, rearEndZ + 0.065);
     const indicator = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.045, 0.075), amber);
-    indicator.position.set(x + Math.sign(x) * 0.17, 0.66, 2.226);
+    indicator.position.set(lightX + Math.sign(x) * 0.17, isApex ? 0.58 : 0.66, rearEndZ + 0.066);
     group.add(headHousing, head, runningLight, tailHousing, tail, indicator);
   }
 
   const rearLightBar = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.035, 0.065), red);
-  rearLightBar.position.set(0, 0.72, 2.222);
+  rearLightBar.position.set(0, isApex ? 0.64 : 0.72, rearEndZ + 0.062);
   group.add(rearLightBar);
 
   if (detailed) {
-    if (appearance.spoiler) {
+    if (appearance.spoiler && !isApex) {
       const spoiler = roundedBox(1.62, 0.075, 0.28, 0.07, carbon);
       spoiler.position.set(0, 1.08, 1.91);
       spoiler.rotation.x = -0.06;
@@ -1658,21 +1666,21 @@ export function createCar(color: number, player = false, customization?: CarCust
     }
 
     const diffuser = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.13, 0.28), carbon);
-    diffuser.position.set(0, 0.255, 2.18);
+    diffuser.position.set(0, isApex ? 0.22 : 0.255, rearEndZ + 0.02);
     group.add(diffuser);
     for (const x of [-0.55, -0.28, 0, 0.28, 0.55]) {
       const fin = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.18, 0.3), carbon);
-      fin.position.set(x, 0.22, 2.22);
+      fin.position.set(x, isApex ? 0.19 : 0.22, rearEndZ + 0.06);
       group.add(fin);
     }
 
     for (const x of [-0.67, 0.67]) {
       const exhaustOuter = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.18, 20), chrome);
       exhaustOuter.rotation.x = Math.PI / 2;
-      exhaustOuter.position.set(x, 0.3, 2.27);
+      exhaustOuter.position.set(x, isApex ? 0.27 : 0.3, rearEndZ + 0.11);
       const exhaustInner = new THREE.Mesh(new THREE.CylinderGeometry(0.067, 0.067, 0.19, 18), dark);
       exhaustInner.rotation.x = Math.PI / 2;
-      exhaustInner.position.set(x, 0.3, 2.285);
+      exhaustInner.position.set(x, isApex ? 0.27 : 0.3, rearEndZ + 0.125);
       group.add(exhaustOuter, exhaustInner);
     }
 
@@ -1696,12 +1704,12 @@ export function createCar(color: number, player = false, customization?: CarCust
       new THREE.PlaneGeometry(0.55, 0.18),
       new THREE.MeshBasicMaterial({ map: plateTexture, toneMapped: false }),
     );
-    plate.position.set(0, 0.51, 2.238);
+    plate.position.set(0, isApex ? 0.47 : 0.51, rearEndZ + 0.078);
 
     const rearBadge = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.012, 8, 20), chrome);
-    rearBadge.position.set(0, 0.85, 2.222);
+    rearBadge.position.set(0, isApex ? 0.75 : 0.85, rearEndZ + 0.062);
     const badgeSlashLeft = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.09, 0.018), chrome);
-    badgeSlashLeft.position.set(-0.021, 0.85, 2.235);
+    badgeSlashLeft.position.set(-0.021, isApex ? 0.75 : 0.85, rearEndZ + 0.075);
     badgeSlashLeft.rotation.z = -0.3;
     const badgeSlashRight = badgeSlashLeft.clone();
     badgeSlashRight.position.x = 0.021;
@@ -1716,19 +1724,31 @@ export function createCar(color: number, player = false, customization?: CarCust
   }
 
   if (appearance.model === 'apex-r') {
-    roof.position.y = 1.355;
-    const noseWedge = roundedBox(1.96, 0.12, 1.15, 0.12, paint);
-    noseWedge.position.set(0, 0.78, -1.68);
-    noseWedge.rotation.x = -0.1;
-    group.add(noseWedge);
+    const noseWedge = roundedBox(2.08, 0.09, 1.28, 0.2, paint);
+    noseWedge.position.set(0, 0.65, -1.82);
+    noseWedge.rotation.x = -0.08;
+    const wingBlade = roundedBox(1.94, 0.065, 0.36, 0.08, carbon);
+    wingBlade.position.set(0, 1.04, 2.12);
+    wingBlade.rotation.x = -0.06;
+    group.add(noseWedge, wingBlade);
+    for (const x of [-0.62, 0.62]) {
+      const wingStrut = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.34, 0.075), carbon);
+      wingStrut.position.set(x, 0.85, 2.08);
+      const wingEndPlate = roundedBox(0.05, 0.22, 0.42, 0.035, carbon);
+      wingEndPlate.position.set(x * 1.48, 1.04, 2.12);
+      group.add(wingStrut, wingEndPlate);
+    }
     for (const side of [-1, 1]) {
       const canard = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.035, 0.16), carbon);
-      canard.position.set(side * 0.78, 0.39, -2.2);
+      canard.position.set(side * 0.86, 0.34, -2.43);
       canard.rotation.y = side * -0.2;
-      group.add(canard);
+      const rearIntakeBlade = roundedBox(0.055, 0.27, 0.52, 0.025, carbon);
+      rearIntakeBlade.position.set(side * 1.105, 0.58, 1.02);
+      rearIntakeBlade.rotation.x = -0.1;
+      group.add(canard, rearIntakeBlade);
     }
-    const centerBlade = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.026, 1.22), carbon);
-    centerBlade.position.set(0, 0.96, -1.25);
+    const centerBlade = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.022, 1.42), carbon);
+    centerBlade.position.set(0, 0.79, -1.48);
     group.add(centerBlade);
   } else if (appearance.model === 'ridge-x') {
     group.userData.rideHeight = 0.11;
@@ -1789,10 +1809,10 @@ export function createCar(color: number, player = false, customization?: CarCust
   group.userData.frontWheels = frontWheels;
   group.userData.firstPersonHidden = group.children.filter(child => child !== group.userData.cockpit);
   group.userData.appearance = appearance;
-  group.userData.wheelRadius = 0.39;
+  group.userData.wheelRadius = wheelRadius;
   group.userData.cameraProfile = {
-    height: 1.27,
-    forwardOffset: -0.42,
+    height: isApex ? 1.15 : 1.27,
+    forwardOffset: isApex ? -0.5 : -0.42,
     sideOffset: -0.38,
     chaseHeight: appearance.model === 'ridge-x' ? 4.15 : 3.65,
     chaseDistance: appearance.model === 'touring-s' ? 8.1 : 7.4,
