@@ -529,7 +529,7 @@ html[data-quality='low'] :is(.garage-card, .online-card, .map-select, .drive-set
   .showroom-brand > p { display: none; }
   .menu-settings-button { width: 42px; height: 42px; }
   .menu-settings-button svg { width: 22px; height: 22px; }
-  .showroom-layout { top: 70px; right: max(18px, env(safe-area-inset-right)); bottom: 78px; left: max(18px, env(safe-area-inset-left)); grid-template-columns: 350px minmax(0, 1fr); gap: 16px; }
+  .showroom-layout { top: 70px; right: max(14px, env(safe-area-inset-right)); bottom: 76px; left: max(14px, env(safe-area-inset-left)); grid-template-columns: clamp(238px, 38vw, 330px) minmax(0, 1fr); gap: 12px; }
   .selection-panel .garage-card { padding: 13px; }
   .selection-panel .car-picker { gap: 4px; }
   .selection-panel .car-picker button { min-height: 39px; padding: 6px 9px; }
@@ -540,39 +540,59 @@ html[data-quality='low'] :is(.garage-card, .online-card, .map-select, .drive-set
   .showcase-heading { top: 18px; left: 21px; }
   .showcase-heading h2 { font-size: 43px; }
   .showcase-caption { right: 17px; bottom: 13px; }
-  .menu-drive-actions { right: max(18px, env(safe-area-inset-right)); bottom: max(9px, env(safe-area-inset-bottom)); }
-  .menu-drive-actions .start-button { width: 192px; height: 62px; }
+  .menu-drive-actions { right: max(14px, env(safe-area-inset-right)); bottom: max(8px, env(safe-area-inset-bottom)); }
+  .menu-drive-actions .start-button { width: 184px; height: 58px; }
   .menu-drive-actions .start-button span { font-size: 18px; }
   .menu-drive-actions .tutorial-launch-button { font-size: 7px; }
   .menu-settings-drawer { padding: 18px; }
 }
 
 @media (max-width: 720px) and (orientation: portrait) {
-  .menu { min-height: 100%; padding: 0 0 112px; overflow-x: hidden; overflow-y: auto; }
-  .showroom-topbar { top: max(15px, env(safe-area-inset-top)); left: 16px; right: 16px; }
+  .menu { min-height: 100%; padding: 0 0 calc(96px + env(safe-area-inset-bottom)); overflow-x: hidden; overflow-y: auto; scroll-padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  .showroom-topbar { top: max(12px, env(safe-area-inset-top)); left: 12px; right: 12px; }
   .showroom-brand .menu__eyebrow { font-size: 6px; }
-  .showroom-brand h1 { margin-top: 5px; font-size: 44px; }
+  .showroom-brand h1 { margin-top: 5px; font-size: 38px; }
   .showroom-brand > p { display: none; }
-  .menu-settings-button { width: 44px; height: 44px; }
-  .menu-settings-button svg { width: 23px; height: 23px; }
-  .showroom-layout { position: relative; top: auto; right: auto; bottom: auto; left: auto; width: calc(100% - 24px); margin: 92px 12px 0; display: flex; flex-direction: column; gap: 13px; }
-  .vehicle-showcase { order: -1; flex: 0 0 310px; min-height: 310px; }
-  .showcase-heading { top: 18px; left: 19px; }
-  .showcase-heading h2 { font-size: 42px; }
-  .showcase-caption { right: 15px; bottom: 12px; }
+  .menu-settings-button { width: 40px; height: 40px; }
+  .menu-settings-button svg { width: 21px; height: 21px; }
+  .showroom-layout { position: relative; top: auto; right: auto; bottom: auto; left: auto; width: calc(100% - 16px); margin: 76px 8px 0; display: flex; flex-direction: column; gap: 9px; }
+  .vehicle-showcase { order: -1; flex: 0 0 clamp(245px, 34vh, 286px); min-height: 245px; border-color: rgba(255,255,255,.16); }
+  .showcase-heading { top: 15px; left: 16px; }
+  .showcase-heading > span { font-size: 7px; }
+  .showcase-heading h2 { margin-top: 7px; font-size: 36px; }
+  .showcase-heading p { gap: 7px; font-size: 7px; }
+  .showcase-caption { display: none; }
+  .showcase-orbit { bottom: 13%; width: 66%; }
   .selection-panel { max-height: none; overflow: visible; }
+  .selection-panel .garage-card { padding: 14px; }
+  .selection-panel .panel-title { margin-bottom: 10px; }
   .selection-panel .car-picker { grid-template-columns: 1fr 1fr; }
-  .selection-panel .car-picker button { min-height: 49px; display: block; }
-  .selection-panel .car-picker small { margin-top: 4px; }
-  .selection-panel .map-options { grid-template-columns: 1fr; }
-  .selection-panel .map-options button { flex-direction: row; height: 52px; }
-  .selection-panel .map-preview { width: 66px; height: 40px; flex-basis: 66px; }
-  .selection-panel .map-options small { display: block; }
-  .menu-drive-actions { position: fixed; right: max(12px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); padding: 7px; border: 1px solid rgba(255,255,255,.1); background: rgba(8,14,12,.8); backdrop-filter: blur(12px); }
-  .menu-drive-actions .start-button { width: 178px; height: 64px; }
+  .selection-panel .car-picker button { min-height: 46px; display: block; padding: 7px 10px; }
+  .selection-panel .car-picker strong { font-size: 13px; }
+  .selection-panel .car-picker small { margin-top: 3px; font-size: 7px; }
+  .selection-panel .car-stats { margin: 10px 0; }
+  .selection-panel .map-select { margin: 0 14px 14px; padding-top: 12px; }
+  .selection-panel .map-options { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .selection-panel .map-options button { height: 69px; padding: 5px; flex-direction: column; align-items: stretch; gap: 5px; }
+  .selection-panel .map-preview { width: 100%; height: 31px; flex-basis: 31px; }
+  .selection-panel .map-options strong { display: block; overflow: hidden; font-size: 8px; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
+  .selection-panel .map-options small { display: none; }
+  .menu-drive-actions { position: fixed; left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right)); bottom: max(7px, env(safe-area-inset-bottom)); height: 68px; padding: 6px; justify-content: stretch; border: 1px solid rgba(255,255,255,.13); background: linear-gradient(90deg, rgba(8,14,12,.92), rgba(13,22,18,.95)); backdrop-filter: blur(14px); box-shadow: 0 -8px 30px rgba(0,0,0,.28); }
+  .menu-drive-actions .start-button { flex: 1; width: auto; height: 56px; transform: none; }
+  .menu-drive-actions .start-button span { font-size: 19px; }
+  .menu-drive-actions .start-button small { margin-top: 4px; font-size: 8px; }
   .menu-drive-actions .tutorial-launch-button b { display: none; }
-  .menu-drive-actions .tutorial-launch-button { width: 34px; height: 34px; justify-content: center; padding: 0; }
+  .menu-drive-actions .tutorial-launch-button { flex: 0 0 48px; width: 48px; height: 48px; justify-content: center; padding: 0; }
   .menu-settings-drawer { width: min(380px, calc(100vw - 16px)); padding: 20px 16px; }
+}
+
+@media (max-width: 380px) and (orientation: portrait) {
+  .showroom-brand h1 { font-size: 34px; }
+  .showroom-layout { margin-top: 70px; }
+  .vehicle-showcase { flex-basis: 232px; min-height: 232px; }
+  .showcase-heading h2 { font-size: 32px; }
+  .selection-panel .garage-card { padding: 11px; }
+  .selection-panel .car-picker button { min-height: 43px; padding: 6px 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; transition-delay: 0ms !important; } }
