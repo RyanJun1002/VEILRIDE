@@ -1,6 +1,6 @@
-# MISTLINE / Handle with care
+# MISTLINE / Atelier
 
-A Three.js driving game with a first careful-delivery route, free driving, seven selectable vehicles, and existing peer multiplayer.
+A Three.js free-driving game with seven selectable Blender vehicles, an Atelier showroom, and peer multiplayer.
 
 ## Play locally
 
@@ -9,9 +9,9 @@ npm.cmd install
 npm.cmd run dev -- --port 4173
 ```
 
-Choose **소중한 배달 / CAREFUL DELIVERY** in the garage. Carry a cake 900 metres to MIST BAKERY. Avoid harsh acceleration, cornering, braking and impacts. Stop in the green roadside bay for 1.5 seconds to receive a condition-based S–D grade. There is no deadline. Road recovery costs 3 condition points. A ruined cake can still be delivered with grade D; retry from the receipt.
+Choose a vehicle and map in the garage, then select **DRIVE** to explore freely.
 
-Keyboard: W throttle, A/D steer, S brake/reverse, Shift boost, Space handbrake, C camera, R recover, Q time, E season, Escape pause. Mobile uses the joystick, latched boost, handbrake, and top-edge camera/recovery buttons. Delivery damage, time and sway pause with the game. Free drive disables the delivery overlay/rules. Multiplayer continues as shared driving; delivery scoring is local, not a synchronized team mission.
+Keyboard: W throttle, A/D steer, S brake/reverse, Shift boost, Space handbrake, C camera, R recover, Q time, E season, Escape pause. Mobile uses the joystick, latched boost, handbrake, and top-edge camera/recovery buttons.
 
 ## Assets and rendering
 
@@ -24,6 +24,6 @@ npm.cmd run build
 npm.cmd test
 ```
 
-Tests use Chrome on this Windows machine (path in `playwright.config.ts`). They cover cargo rules, model bounds/pivots, seven vehicle selections, driving/cockpit/pause, delivery completion/retry, free drive, and 390×844 / 844×390 / 820×1180 touch layouts. Screenshots are written to `art/qa/` (git-ignored). These viewport tests do not establish frame rates on physical low-end devices.
+Tests use Chrome on this Windows machine (path in `playwright.config.ts`). They cover model bounds/pivots, seven vehicle selections, free driving/cockpit/pause, absence of delivery UI, and 390×844 / 844×390 / 820×1180 touch layouts. Screenshots are written to `art/qa/` (git-ignored). These viewport tests do not establish frame rates on physical low-end devices.
 
-`?qa` exposes simulation handles only during Vite development for deterministic arrival/pause tests. Production builds omit the test hook. GitHub Actions builds with the repository subpath; models use Vite's base URL.
+GitHub Actions builds with the repository subpath; models use Vite's base URL.

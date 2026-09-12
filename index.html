@@ -30,10 +30,6 @@
 
         <div class="showroom-layout">
           <aside class="selection-panel" aria-label="차량과 맵 선택">
-            <div class="journey-mode" role="group" aria-label="플레이 모드">
-              <button type="button" data-mode="delivery" class="is-selected" aria-pressed="true" data-ko="소중한 배달" data-en="CAREFUL DELIVERY">소중한 배달</button>
-              <button type="button" data-mode="free" aria-pressed="false" data-ko="자유 주행" data-en="FREE DRIVE">자유 주행</button>
-            </div>
             <section class="garage-card">
               <div class="panel-title"><span>SELECT VEHICLE</span><small>GARAGE 07</small></div>
               <div class="car-picker" aria-label="차량 선택">
@@ -88,11 +84,6 @@
               <canvas id="vehiclePreview" aria-label="회전하는 선택 차량 미리보기"></canvas>
               <div class="showcase-orbit" aria-hidden="true"></div>
               <div class="showcase-caption"><span>360° AUTO DISPLAY</span><small>SELECT A VEHICLE TO PREVIEW</small></div>
-            </div>
-            <div class="delivery-brief" id="deliveryBrief">
-              <span class="delivery-stamp">01<small>DISPATCH</small></span>
-              <div><small>HANDLE WITH CARE</small><h3 data-ko="작은 케이크, 소중한 여정." data-en="A little cake. A careful journey.">작은 케이크, 소중한 여정.</h3><p data-ko="급회전·급제동을 피하고, 초록색 배송 구역에 멈추세요." data-en="Keep it steady. Stop inside the green delivery bay.">급회전·급제동을 피하고, 초록색 배송 구역에 멈추세요.</p></div>
-              <b>900 m<small>NO RUSH</small></b>
             </div>
           </section>
         </div>
@@ -171,10 +162,6 @@
 
       <section id="hud" class="hud is-hidden" aria-live="polite">
         <div class="brand">MIST<span>LINE</span></div>
-        <aside id="deliveryHud" class="delivery-hud">
-          <div class="cargo-illustration" aria-hidden="true"><div id="cargoCake"><i></i><b></b><span></span></div></div>
-          <div class="delivery-hud__copy"><small>HANDLE WITH CARE</small><strong id="deliveryObjective">MIST BAKERY · 900 m</strong><div class="cargo-meter"><i id="cargoMeter"></i></div><span id="cargoCondition">케이크 상태 100%</span><em id="deliveryHint">천천히 출발하세요</em></div>
-        </aside>
         <div class="route-chip"><i></i><span id="routeName">RIDGEWAY 09</span><small id="distance">0.0 KM</small></div>
         <div id="multiplayerHud" class="multiplayer-hud is-hidden"><i></i><span>SOLO</span></div>
         <div id="locatorBar" class="locator-bar is-hidden" aria-live="polite">
@@ -234,9 +221,6 @@
       </section>
 
       <div id="toast" class="toast">도로로 복귀했습니다</div>
-      <section id="deliveryResult" class="delivery-result is-hidden" role="dialog" aria-modal="true" aria-labelledby="deliveryResultTitle">
-        <div class="delivery-receipt"><small>MIST BAKERY / DELIVERY RECEIPT</small><div id="deliveryGrade">S</div><h2 id="deliveryResultTitle" data-ko="배송을 마쳤어요." data-en="Delivery complete.">배송을 마쳤어요.</h2><p id="deliveryResultDetails"></p><div class="receipt-rule"></div><p data-ko="빠른 기록보다, 무사히 도착한 케이크." data-en="Not a fast time. A cake that made it safely.">빠른 기록보다, 무사히 도착한 케이크.</p><button id="deliveryRetry" type="button" data-ko="다시 배달하기" data-en="DELIVER AGAIN">다시 배달하기</button><button id="deliveryHome" type="button" data-ko="차고로 돌아가기" data-en="BACK TO GARAGE">차고로 돌아가기</button></div>
-      </section>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

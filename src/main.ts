@@ -1,4 +1,5 @@
 import './style.css';
+import './atelier.css';
 import { DrivingSimulation, roadCenter, type InputState } from './simulation';
 import { GameRenderer, type WorldMapId } from './renderer';
 import {
@@ -14,9 +15,6 @@ import { MultiplayerSession, cleanRoomCode, type NetworkPlayerState } from './mu
 import { PresenceSession } from './presence';
 import { VehiclePreviewRenderer } from './vehicle-preview';
 import { loadVehicleAsset, hasVehicleAsset } from './vehicle-assets';
-import { DeliveryRun } from './delivery';
-import { DeliveryView } from './delivery-view';
-import './delivery.css';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
 const menu = document.querySelector<HTMLElement>('#menu')!;
@@ -102,7 +100,7 @@ const WORLD_MAP_DETAILS: Record<WorldMapId, {
 
 const UI_COPY = {
   ko: {
-    tagline: '서두르지 않아도 좋아요. 소중한 것을 싣고 떠나는 길.',
+    tagline: '안개 너머로 이어지는 길. 나만의 속도로 떠나는 드라이브.',
     accel: '가속', speed: '최고속도', grip: '그립', host: '방 만들기', join: '참가',
     roomPlaceholder: '6자리 숫자', roomLabel: '6자리 방 코드',
     multiplayerHelp: '6자리 숫자를 친구에게 보내세요. 연결되면 양쪽에 <b>2 PLAYERS</b>가 표시됩니다.',
@@ -118,7 +116,7 @@ const UI_COPY = {
     online: '온라인', onlineConnecting: '온라인 인원 연결 중', onlineTitle: (count: number) => `현재 ${count}명 온라인`,
   },
   en: {
-    tagline: 'Take your time. You are carrying something that matters.',
+    tagline: 'Beyond the mist. An open road at your own pace.',
     accel: 'ACCELERATION', speed: 'TOP SPEED', grip: 'GRIP', host: 'CREATE ROOM', join: 'JOIN',
     roomPlaceholder: '6 DIGITS', roomLabel: '6-digit room code',
     multiplayerHelp: 'Send the 6-digit code to a friend. Both screens show <b>2 PLAYERS</b> when connected.',
@@ -233,16 +231,7 @@ function loadCustomization(): CarCustomization {
 let customization = loadCustomization();
 
 const simulation = new DrivingSimulation();
-const delivery = new DeliveryRun();
 const view = new GameRenderer(canvas);
-const deliveryView = new DeliveryView(view.scene, delivery);
-const deliveryHud = document.querySelector<HTMLElement>('#deliveryHud')!;
-const deliveryResult = document.querySelector<HTMLElement>('#deliveryResult')!;
-const deliveryObjective = document.querySelector<HTMLElement>('#deliveryObjective')!;
-const cargoCondition = document.querySelector<HTMLElement>('#cargoCondition')!;
-const cargoMeter = document.querySelector<HTMLElement>('#cargoMeter')!;
-const cargoCake = document.querySelector<HTMLElement>('#cargoCake')!;
-const deliveryHint = document.querySelector<HTMLElement>('#deliveryHint')!;
 const vehiclePreview = new VehiclePreviewRenderer(vehiclePreviewCanvas);
 document.documentElement.dataset.quality = view.lowPower ? 'low' : 'high';
 simulation.setCarModel(customization.model);
@@ -1069,10 +1058,6 @@ function requestStart() {
 }
 
 function start() {
-  delivery.reset(simulation.player.forwardSpeed);
-  deliveryResult.classList.add('is-hidden');
-  deliveryHud.classList.toggle('is-hidden', !delivery.enabled);
-  hud.dataset.mode = delivery.enabled ? 'delivery' : 'free';
   running = true;
   paused = false;
   setMenuSettings(false);
@@ -1099,7 +1084,6 @@ function clearTouchInput() {
 
 function setPause(value: boolean) {
   if (!running) return;
-  if (!value && delivery.enabled && delivery.status === 'delivered') return;
   paused = value;
   if (paused) audio?.pause();
   else audio?.start();
@@ -1117,8 +1101,6 @@ function returnToMainMenu() {
   keys.clear();
   clearTouchInput();
   simulation.restart();
-  delivery.reset();
-  deliveryResult.classList.add('is-hidden');
   multiplayer.disconnect();
   setOnlineControls('solo');
   roomCodeInput.value = '';
@@ -1142,25 +1124,6 @@ function flashToast(message: string) {
 }
 
 document.querySelector('#startButton')!.addEventListener('click', requestStart);
-document.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach(button => {
-  button.addEventListener('click', () => {
-    delivery.enabled = button.dataset.mode === 'delivery';
-    document.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach(other => {
-      const selected = other === button;
-      other.classList.toggle('is-selected', selected);
-      other.setAttribute('aria-pressed', String(selected));
-    });
-    document.querySelector('#deliveryBrief')!.classList.toggle('is-hidden', !delivery.enabled);
-  });
-});
-document.querySelector('#deliveryHome')!.addEventListener('click', returnToMainMenu);
-document.querySelector('#deliveryRetry')!.addEventListener('click', () => {
-  simulation.restart();
-  delivery.reset();
-  deliveryResult.classList.add('is-hidden');
-  view.resetCamera();
-  setPause(false);
-});
 tutorialButton.addEventListener('click', () => openTutorial(false));
 tutorialSkipButton.addEventListener('click', () => closeTutorial(true));
 tutorialBackButton.addEventListener('click', () => {
@@ -1176,24 +1139,17 @@ document.querySelector('#mobileCameraButton')?.addEventListener('click', () => {
 });
 document.querySelector('#mobileResetButton')?.addEventListener('click', () => {
   simulation.reset();
-  delivery.roadReset(simulation.player.forwardSpeed);
   flashToast(UI_COPY[language].roadReset);
 });
 document.querySelector('#resumeButton')!.addEventListener('click', () => setPause(false));
 document.querySelector('#restartButton')!.addEventListener('click', () => {
   simulation.restart();
-  delivery.reset();
   setPause(false);
   flashToast(UI_COPY[language].newJourney);
 });
 document.querySelector('#mainMenuButton')!.addEventListener('click', returnToMainMenu);
 
 addEventListener('keydown', (event) => {
-  if (!deliveryResult.classList.contains('is-hidden')) {
-    if (event.code === 'Escape') returnToMainMenu();
-    if (event.code !== 'Tab' && event.code !== 'Enter') event.preventDefault();
-    return;
-  }
   if (!menuSettingsDrawer.classList.contains('is-hidden') && event.code === 'Escape') {
     event.preventDefault();
     setMenuSettings(false);
@@ -1218,7 +1174,6 @@ addEventListener('keydown', (event) => {
   }
   if (event.code === 'KeyR' && !event.repeat) {
     simulation.reset();
-    delivery.roadReset(simulation.player.forwardSpeed);
     flashToast(UI_COPY[language].roadReset);
   }
   if (event.code === 'KeyQ' && !event.repeat) {
@@ -1319,29 +1274,6 @@ function updateHud() {
   distanceEl.textContent = `${(p.distance / 1000).toFixed(1)} KM`;
   speedBar.style.transform = `scaleX(${Math.min(1, kmh / 290)})`;
   nearMiss.classList.toggle('show', simulation.nearMiss);
-  if (delivery.enabled) {
-    const distance = Math.round(delivery.distance(p));
-    deliveryObjective.textContent = `MIST BAKERY · ${distance} m`;
-    cargoCondition.textContent = `${language === 'ko' ? '케이크 상태' : 'CAKE CONDITION'} ${Math.ceil(delivery.integrity)}%`;
-    cargoMeter.style.transform = `scaleX(${delivery.integrity / 100})`;
-    cargoCake.style.transform = `rotate(${delivery.roll * 120}deg) translateY(${Math.abs(delivery.pitch) * -18}px)`;
-    deliveryHud.classList.toggle('is-stressed', delivery.load > 1);
-    const hintKo = delivery.stopTime > 0 ? '잠시 정차해 주세요…' : distance < 55 ? '초록색 구역 안에 정차하세요' : delivery.load > 1 ? '짐이 흔들려요. 부드럽게!' : p.z < delivery.targetZ - 12 ? '도착지를 지나쳤어요. 돌아오세요' : '시간 제한 없이, 천천히';
-    const hintEn = delivery.stopTime > 0 ? 'Hold still…' : distance < 55 ? 'Stop inside the green bay' : delivery.load > 1 ? 'Easy! Your cargo is shaking' : p.z < delivery.targetZ - 12 ? 'You passed the bay. Turn back' : 'No time limit. Take it easy';
-    deliveryHint.textContent = language === 'ko' ? hintKo : hintEn;
-  }
-}
-
-function finishDelivery() {
-  if (delivery.status !== 'delivered' || !deliveryResult.classList.contains('is-hidden')) return;
-  setPause(true);
-  pause.classList.add('is-hidden');
-  document.querySelector('#deliveryGrade')!.textContent = delivery.grade;
-  document.querySelector('#deliveryResultDetails')!.textContent = language === 'ko'
-    ? `케이크 상태 ${Math.ceil(delivery.integrity)}% · 소요 시간 ${Math.floor(delivery.elapsed / 60)}분 ${Math.floor(delivery.elapsed % 60)}초`
-    : `Condition ${Math.ceil(delivery.integrity)}% · ${Math.floor(delivery.elapsed / 60)}m ${Math.floor(delivery.elapsed % 60)}s`;
-  deliveryResult.classList.remove('is-hidden');
-  document.querySelector<HTMLButtonElement>('#deliveryRetry')!.focus();
 }
 
 function loop(now: number) {
@@ -1361,7 +1293,6 @@ function loop(now: number) {
       let simulationSteps = 0;
       while (simulationAccumulator >= SIMULATION_STEP && simulationSteps < MAX_SIMULATION_STEPS) {
         simulation.update(SIMULATION_STEP, input);
-        delivery.update(SIMULATION_STEP, simulation.player, simulation.collision);
         collisionThisFrame ||= simulation.collision;
         nearMissThisFrame ||= simulation.nearMiss;
         simulationAccumulator -= SIMULATION_STEP;
@@ -1372,7 +1303,6 @@ function loop(now: number) {
       // avoids the 0/2 fixed-step cadence that made the car and camera jitter.
       simulationAccumulator = 0;
       simulation.update(Math.min(frameDt, 0.05), input);
-      delivery.update(Math.min(frameDt, 0.05), simulation.player, simulation.collision);
       collisionThisFrame = simulation.collision;
       nearMissThisFrame = simulation.nearMiss;
     }
@@ -1390,7 +1320,6 @@ function loop(now: number) {
       input.brake > 0 || input.handbrake,
     );
     updateHud();
-    finishDelivery();
   } else if (!running) {
     simulationAccumulator = 0;
     const idleInput: InputState = { throttle: 0, boost: 0, brake: 0, steer: 0, handbrake: false };
@@ -1421,7 +1350,6 @@ function loop(now: number) {
       simulation.trafficEnabled ? simulation.traffic : [],
       visualDt,
     );
-    deliveryView.update(delivery, simulation.player, running);
     view.render();
   }
   hitFlash = Math.max(0, hitFlash - frameDt * 2.8);
@@ -1429,8 +1357,3 @@ function loop(now: number) {
 }
 
 requestAnimationFrame(loop);
-
-// Explicit opt-in for repeatable local playtests; removed by production dead-code elimination.
-if (import.meta.env.DEV && new URLSearchParams(location.search).has('qa')) {
-  Object.assign(window, { __mistlineQA: { simulation, delivery, view } });
-}
