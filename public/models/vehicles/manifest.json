@@ -1,0 +1,37 @@
+[
+  {
+    "id": "mist-gt",
+    "triangles": 19356,
+    "bytes": 377040
+  },
+  {
+    "id": "apex-r",
+    "triangles": 21636,
+    "bytes": 429144
+  },
+  {
+    "id": "ridge-x",
+    "triangles": 19684,
+    "bytes": 387112
+  },
+  {
+    "id": "touring-s",
+    "triangles": 19804,
+    "bytes": 380820
+  },
+  {
+    "id": "trail-pickup",
+    "triangles": 23368,
+    "bytes": 454268
+  },
+  {
+    "id": "metro-bus",
+    "triangles": 22564,
+    "bytes": 433044
+  },
+  {
+    "id": "storm-moto",
+    "triangles": 10536,
+    "bytes": 210780
+  }
+]

@@ -1,0 +1,124 @@
+/* Atelier / careful delivery: warm paper, deep pine, quiet movement. */
+:root { --orange: #b4d9ab; --cream: #f2efdf; --pine: #183c31; --paper: #eee9d8; --line: rgba(220,233,209,.19); }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid #e6f8d0; outline-offset: 4px; }
+.grain { opacity: .026; }
+.menu { background: linear-gradient(90deg,rgba(8,23,19,.74),rgba(10,22,18,.2) 62%,rgba(10,22,18,.07)); }
+.showroom-brand h1 { font-weight: 500; letter-spacing: -.045em; }
+.showroom-brand > p { color: #d5ddcc; font-size: 12px; }
+.showroom-brand .menu__eyebrow { letter-spacing: .26em; }
+.menu-settings-button { border: 1px solid var(--line); border-radius: 50%; background: #12251dcc; }
+.selection-panel { background: rgba(15,32,26,.92); border: 1px solid var(--line); border-radius: 14px; scrollbar-color: #86a98c transparent; box-shadow: 0 16px 60px #08150d33; }
+.selection-panel .garage-card { background: none; }
+.selection-panel .car-picker { counter-reset: car; }
+.selection-panel .car-picker button { position: relative; border: 1px solid transparent; border-bottom-color: #d7e4cd12; border-radius: 5px; padding-left: 38px; background: transparent; }
+.selection-panel .car-picker button::before { counter-increment: car; content: '0' counter(car); position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font: 10px monospace; color: #b3c7b580; }
+.selection-panel .car-picker strong { font-family: var(--font-ui); font-size: 12px; letter-spacing: .04em; }
+.selection-panel .car-picker small { color: #c1cfbfa8; }
+.selection-panel .car-picker button.is-selected { background: #c5deba; color: #173328; border-color: #d5e6c6; }
+.selection-panel .car-picker button.is-selected small,.selection-panel .car-picker button.is-selected::before { color: #375944; }
+.selection-panel .car-picker button:hover:not(.is-selected) { background: #a4c6ab12; border-color: #a4c6ab44; }
+.selection-panel .map-options button.is-selected { border-color: #adc89a; background: #75937a26; }
+.panel-title { color: #d8e1cc; }
+.journey-mode { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 14px 16px 0; padding: 4px; border: 1px solid var(--line); border-radius: 8px; }
+.journey-mode button { min-height: 40px; border: 0; border-radius: 5px; background: transparent; color: #b3c3b4; font-size: 11px; font-weight: 650; cursor: pointer; }
+.journey-mode button.is-selected { background: #314d3d; color: #f0f0df; }
+.vehicle-showcase { border: 1px solid #e3ecdc20; border-radius: 14px; background: linear-gradient(135deg,#d7e5d30d,transparent 60%); overflow: hidden; }
+.showcase-heading { top: 30px; left: 34px; }
+.showcase-heading > span { color: #d1e1c1; font-size: 9px; letter-spacing: .23em; }
+.showcase-heading h2 { font: 500 clamp(34px,4vw,62px)/1.1 var(--font-ui); letter-spacing: -.055em; }
+.showcase-heading p { color: #e0e9d2; }
+.vehicle-preview-shell canvas { filter: none !important; touch-action: pan-y; }
+.showcase-orbit { display: none; }
+.showcase-caption { display: none; }
+.delivery-brief { position: absolute; z-index: 2; bottom: 22px; left: 24px; right: 24px; padding: 18px 22px; display: flex; gap: 20px; align-items: center; background: #eae9d9ed; color: #23392e; border: 1px solid #f9fae799; border-radius: 9px; box-shadow: 0 8px 40px #14231c12; }
+.delivery-stamp { flex: 0 0 52px; font: 400 42px/1 Georgia,serif; padding-right: 17px; border-right: 1px solid #2e4d3333; }
+.delivery-stamp small { display: block; margin-top: 6px; font: 6px var(--font-ui); letter-spacing: .1em; }
+.delivery-brief > div { flex: 1; }
+.delivery-brief div > small { font-size: 8px; letter-spacing: .19em; color: #536948; }
+.delivery-brief h3 { font-size: clamp(14px,1.4vw,21px); font-weight: 600; letter-spacing: -.04em; margin: 7px 0; }
+.delivery-brief p { margin: 0; font-size: 10px; color: #5e6b58; line-height: 1.5; }
+.delivery-brief > b { font: 500 21px var(--font-ui); text-align: right; white-space: nowrap; }
+.delivery-brief > b small { display: block; font-size: 7px; letter-spacing: .14em; margin-top: 7px; color: #64755b; }
+.menu-drive-actions .start-button { background: #c5dfad; color: #183529; border: 1px solid #e4f0d3; border-radius: 8px; transform: none; box-shadow: 0 8px 32px #182e2055; }
+.menu-drive-actions .start-button:hover { background: #deedc9; }
+.menu-drive-actions .start-button small { color: #3f6046; }
+.menu-drive-actions .start-button span { display: flex; align-items: center; justify-content: center; gap: 25px; }
+.menu-drive-actions .start-button span::after { content: '↗'; font-family: sans-serif; font-weight: 400; }
+.menu-settings-drawer,.tutorial__card { border-radius: 14px; }
+.delivery-hud { position: absolute; left: 28px; top: 76px; display: flex; align-items: center; gap: 13px; width: 295px; padding: 15px; border: 1px solid #d5e7ce33; border-radius: 12px; background: #13291fe8; color: #f1efdf; }
+.delivery-hud__copy { flex: 1; min-width: 0; }
+.hud[data-mode='delivery'] .route-chip { display: none; }
+.delivery-hud__copy > small { display: block; font-size: 7px; letter-spacing: .18em; color: #b5cba8; }
+.delivery-hud strong { display: block; font-size: 12px; margin-top: 6px; }
+.cargo-meter { height: 3px; background: #d3e5be26; overflow: hidden; margin: 11px 0 7px; }
+.cargo-meter i { display: block; width: 100%; height: 100%; background: #bddea5; transform-origin: left; transition: transform .18s linear; }
+.delivery-hud__copy > span { font-size: 10px; }
+.delivery-hud em { display: block; margin-top: 5px; font-size: 9px; font-style: normal; color: #beccb3; }
+.delivery-hud.is-stressed { border-color: #e1aa75; }
+.delivery-hud.is-stressed em { color: #f1be8a; }
+.cargo-illustration { width: 60px; height: 62px; display: grid; place-items: center; flex-shrink: 0; border-radius: 50%; background: #c3d6a90d; }
+#cargoCake { width: 44px; height: 32px; position: relative; background: linear-gradient(#f5d9c0 48%,#994d40 49%,#994d40 55%,#e2b799 56%); border-radius: 50% / 18%; transform-origin: 50% 100%; box-shadow: 0 5px 0 #a0ba9c; }
+#cargoCake i { position: absolute; inset: -5px 0 auto; height: 16px; border-radius: 50%; background: #f2eedc; }
+#cargoCake b { position: absolute; width: 9px; height: 11px; left: 18px; top: -9px; border-radius: 50% 50% 60% 60%; background: #bf5143; }
+#cargoCake span { position: absolute; inset: auto -5px -7px; height: 3px; border-radius: 50%; background: #dbe6cf; }
+.delivery-result { position: fixed; z-index: 60; inset: 0; display: grid; place-items: center; padding: 20px; background: #081c15c9; backdrop-filter: blur(9px); }
+.delivery-result.is-hidden,.delivery-hud.is-hidden,.delivery-brief.is-hidden { display: none; }
+.delivery-receipt { width: min(410px,100%); max-height: 90dvh; overflow-y: auto; padding: 38px; text-align: center; color: #213b2c; background: #eeeada; box-shadow: 0 25px 100px #0005; border-radius: 3px 3px 16px 16px; animation: receipt-in .5s var(--ease-out); }
+.delivery-receipt > small { font-size: 8px; letter-spacing: .16em; color: #6b785f; }
+#deliveryGrade { width: 95px; height: 95px; display: grid; place-items: center; margin: 26px auto; border: 2px solid #4b7557; border-radius: 50%; font: italic 60px Georgia,serif; color: #4b7557; transform: rotate(-9deg); }
+.delivery-receipt h2 { font-size: 24px; letter-spacing: -.05em; }
+.delivery-receipt p { font-size: 11px; line-height: 1.7; color: #65705b; }
+.receipt-rule { border-top: 1px dashed #5c72566b; margin: 22px 0; }
+.delivery-receipt button { display: block; width: 100%; min-height: 46px; margin-top: 9px; border: 1px solid #b5c5a8; border-radius: 5px; color: #244432; background: transparent; cursor: pointer; }
+.delivery-receipt #deliveryRetry { margin-top: 24px; background: #244432; color: #efeddf; }
+@keyframes receipt-in { from { opacity: 0; transform: translateY(20px) rotate(2deg); } to { opacity: 1; transform: none; } }
+@media (max-height: 650px) and (orientation: landscape) {
+  .showroom-topbar { top: 14px; left: 20px; right: 20px; }
+  .showroom-brand h1 { font-size: 39px; }
+  .showroom-brand > p { display: none; }
+  .showroom-layout { top: 77px; bottom: 75px; left: 16px; right: 16px; grid-template-columns: minmax(220px,31%) minmax(0,1fr); gap: 14px; }
+  .showcase-heading { top: 18px; left: 22px; }
+  .showcase-heading h2 { font-size: 32px; }
+  .delivery-brief { bottom: 12px; left: 12px; right: 12px; padding: 11px 14px; gap: 10px; }
+  .delivery-stamp,.delivery-brief p { display: none; }
+  .delivery-brief h3 { font-size: 14px; margin-bottom: 0; }
+  .menu-drive-actions { bottom: 10px; right: 16px; }
+  .menu-drive-actions .start-button { height: 54px; width: 190px; }
+  .menu__controls { display: none; }
+  .delivery-hud { top: 53px; left: 16px; width: 240px; padding: 9px; gap: 8px; }
+  .cargo-illustration { width: 40px; transform: scale(.8); }
+  .delivery-hud strong { font-size: 10px; }
+}
+@media (max-width: 900px) and (orientation: portrait) {
+  .menu { overflow-y: auto; padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+  .showroom-topbar { top: max(16px,env(safe-area-inset-top)); left: 16px; right: 16px; }
+  .showroom-brand h1 { font-size: 39px; }
+  .showroom-brand > p { display: none; }
+  .showroom-layout { position: relative; inset: auto; display: flex; flex-direction: column; margin: 87px 12px 0; width: calc(100% - 24px); gap: 12px; }
+  .vehicle-showcase { order: -1; flex: 0 0 340px; min-height: 340px; }
+  .showcase-heading { top: 18px; left: 19px; }
+  .showcase-heading h2 { font-size: 32px; margin-top: 6px; }
+  .showcase-heading > span { font-size: 7px; }
+  .vehicle-preview-shell { inset: 18px 0 42px; }
+  .delivery-brief { left: 10px; right: 10px; bottom: 10px; padding: 12px; gap: 8px; }
+  .delivery-stamp { display: none; }
+  .delivery-brief h3 { font-size: 14px; margin: 5px 0; }
+  .delivery-brief p { font-size: 9px; max-width: 240px; }
+  .delivery-brief > b { font-size: 16px; }
+  .selection-panel { overflow: visible; max-height: none; }
+  .selection-panel .car-picker { grid-template-columns: 1fr 1fr; }
+  .selection-panel .car-picker button { min-height: 49px; padding-left: 30px; display: block; }
+  .selection-panel .car-picker strong { font-size: 11px; }
+  .selection-panel .car-picker small { margin-top: 3px; }
+  .selection-panel .map-options { grid-template-columns: 1fr; }
+  .selection-panel .map-options button { height: 51px; flex-direction: row; }
+  .selection-panel .map-preview { width: 63px; height: 37px; flex-basis: 63px; }
+  .menu-drive-actions { position: fixed; left: 12px; right: 12px; bottom: max(8px,env(safe-area-inset-bottom)); border-radius: 10px; padding: 6px; background: #172d24f5; height: 69px; }
+  .menu-drive-actions .start-button { width: auto; flex: 1; height: 55px; }
+  .menu-drive-actions .tutorial-launch-button { width: 48px; flex: 0 0 48px; }
+  .menu-drive-actions .tutorial-launch-button b { display: none; }
+  .menu__controls { display: none; }
+  .delivery-hud { top: 80px; left: 12px; width: 255px; padding: 11px; }
+  .route-chip { max-width: 58vw; }
+}
+@media (prefers-reduced-motion: reduce) { .delivery-receipt { animation: none; } }

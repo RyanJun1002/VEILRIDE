@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { upgradeVehicle } from './vehicle-assets';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import type { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { TrafficState, VehicleState } from './simulation';
@@ -1408,6 +1410,11 @@ function createPickup(appearance: CarCustomization, player: boolean) {
 }
 
 export function createCar(color: number, player = false, customization?: CarCustomization) {
+  const car = createProceduralCar(color, player, customization);
+  return player || customization ? upgradeVehicle(car, customization ?? { ...DEFAULT_CUSTOMIZATION, color }) : car;
+}
+
+function createProceduralCar(color: number, player = false, customization?: CarCustomization) {
   const appearance = customization ?? { ...DEFAULT_CUSTOMIZATION, color };
   if (appearance.model === 'metro-bus') return createBus(appearance, player);
   if (appearance.model === 'storm-moto') return createMotorcycle(appearance, player);
@@ -2053,6 +2060,12 @@ export class GameRenderer {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.08;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    const environment = new RoomEnvironment();
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    this.scene.environment = pmrem.fromScene(environment, .08, .1, 60).texture;
+    this.scene.environmentIntensity = .38;
+    environment.dispose();
+    pmrem.dispose();
     this.sandTextures = this.loadSandTextures();
 
     this.scene.background = new THREE.Color(0x9db4a5);
@@ -2070,6 +2083,8 @@ export class GameRenderer {
     this.keyLight.shadow.camera.bottom = -55;
     this.keyLight.shadow.camera.far = 220;
     this.keyLight.shadow.bias = -0.0002;
+    this.keyLight.shadow.normalBias = .035;
+    this.keyLight.shadow.radius = 3;
     this.scene.add(this.keyLight);
 
     const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffe1ac, fog: false });
@@ -2283,7 +2298,6 @@ export class GameRenderer {
 
   cycleTime() {
     this.timeIndex = (this.timeIndex + 1) % this.timeSettings.length;
-    this.applyTimeSetting();
     return this.timeSettings[this.timeIndex].name;
   }
 
@@ -2300,22 +2314,21 @@ export class GameRenderer {
     this.applyTimeSetting();
   }
 
-  private applyTimeSetting() {
+  private applyTimeSetting(blend = 1) {
     const setting = this.timeSettings[this.timeIndex];
     const atmosphere = WORLD_MAP_ATMOSPHERE[this.worldMap];
     const atmosphereBlend = this.timeIndex === 3 ? atmosphere.blend * 0.22 : atmosphere.blend;
-    (this.scene.background as THREE.Color)
-      .setHex(setting.sky)
-      .lerp(new THREE.Color(atmosphere.sky), atmosphereBlend);
+    (this.scene.background as THREE.Color).lerp(
+      new THREE.Color(setting.sky).lerp(new THREE.Color(atmosphere.sky), atmosphereBlend), blend);
     const fog = this.scene.fog as THREE.FogExp2;
-    fog.color.setHex(setting.fog).lerp(new THREE.Color(atmosphere.fog), atmosphereBlend);
-    fog.density = setting.density * atmosphere.fogMultiplier;
-    this.hemiLight.color.setHex(setting.hemiSky);
-    this.hemiLight.groundColor.setHex(setting.hemiGround);
-    this.hemiLight.intensity = setting.hemi;
-    this.keyLight.color.setHex(setting.key);
-    this.keyLight.intensity = setting.keyPower;
-    this.renderer.toneMappingExposure = setting.exposure;
+    fog.color.lerp(new THREE.Color(setting.fog).lerp(new THREE.Color(atmosphere.fog), atmosphereBlend), blend);
+    fog.density = THREE.MathUtils.lerp(fog.density, setting.density * atmosphere.fogMultiplier, blend);
+    this.hemiLight.color.lerp(new THREE.Color(setting.hemiSky), blend);
+    this.hemiLight.groundColor.lerp(new THREE.Color(setting.hemiGround), blend);
+    this.hemiLight.intensity = THREE.MathUtils.lerp(this.hemiLight.intensity, setting.hemi, blend);
+    this.keyLight.color.lerp(new THREE.Color(setting.key), blend);
+    this.keyLight.intensity = THREE.MathUtils.lerp(this.keyLight.intensity, setting.keyPower, blend);
+    this.renderer.toneMappingExposure = THREE.MathUtils.lerp(this.renderer.toneMappingExposure, setting.exposure, blend);
     (this.sun.material as THREE.MeshBasicMaterial).color.setHex(setting.sun);
     this.sun.scale.setScalar(this.timeIndex === 3 ? 0.62 : 1);
     const night = this.timeIndex === 3;
@@ -2715,6 +2728,7 @@ export class GameRenderer {
   }
 
   update(player: VehicleState, traffic: TrafficState[], dt: number) {
+    this.applyTimeSetting(1 - Math.exp(-dt * 2.4));
     const currentChunk = Math.floor(-player.z / CHUNK_LENGTH);
     for (let i = 0; i < CHUNK_COUNT; i++) {
       const index = currentChunk - 2 + i;
@@ -2840,10 +2854,11 @@ export class GameRenderer {
       lookAhead = new THREE.Vector3(player.x, 1.1, player.z).add(forward.clone().multiplyScalar(15));
     } else {
       const speedCamera = Math.min(Math.abs(player.forwardSpeed) / 75, 1);
-      desired = new THREE.Vector3(player.x, cameraProfile.chaseHeight - speedCamera * 0.42, player.z)
-        .add(forward.clone().multiplyScalar(-cameraProfile.chaseDistance + speedCamera * 1.0));
+      const portrait = this.camera.aspect < 1;
+      desired = new THREE.Vector3(player.x, cameraProfile.chaseHeight + (portrait ? .8 : 0) - speedCamera * .2, player.z)
+        .add(forward.clone().multiplyScalar(-cameraProfile.chaseDistance * (portrait ? 1.3 : 1) + speedCamera * .4));
       desired.add(right.multiplyScalar(-player.lateralSpeed * 0.05));
-      lookAhead = new THREE.Vector3(player.x, cameraProfile.lookHeight, player.z).add(forward.clone().multiplyScalar(15));
+      lookAhead = new THREE.Vector3(player.x, cameraProfile.lookHeight, player.z).add(forward.clone().multiplyScalar(portrait ? 4.5 : 6));
     }
     if (this.cameraMode === 1 || this.cameraSnap) {
       // The cockpit camera is rigidly mounted to the car so acceleration cannot
@@ -2852,17 +2867,17 @@ export class GameRenderer {
       this.cameraTarget.copy(lookAhead);
       this.cameraSnap = false;
     } else {
-      const cameraEase = 1 - Math.exp(-dt * 5.2);
+      const cameraEase = 1 - Math.exp(-dt * 7);
       this.cameraPosition.lerp(desired, cameraEase);
-      this.cameraTarget.lerp(lookAhead, cameraEase);
+      this.cameraTarget.lerp(lookAhead, 1 - Math.exp(-dt * 4.8));
     }
     this.camera.position.copy(this.cameraPosition);
     this.camera.lookAt(this.cameraTarget);
     const targetFov = this.cameraMode === 1
       ? (playerAppearance.model === 'trail-pickup' ? 75 : 67)
-        + Math.min(Math.abs(player.forwardSpeed) / 80, 1) * 4
-      : 58 + Math.min(Math.abs(player.forwardSpeed), 80) * 0.24;
-    this.camera.fov += (targetFov - this.camera.fov) * Math.min(1, dt * 3);
+        + Math.min(Math.abs(player.forwardSpeed) / 80, 1) * 1.5
+      : 58 + Math.min(Math.abs(player.forwardSpeed) / 80, 1) * 5;
+    this.camera.fov += (targetFov - this.camera.fov) * (1 - Math.exp(-dt * 2.2));
     this.camera.updateProjectionMatrix();
 
     const sunOffset = this.timeSettings[this.timeIndex].sunOffset;

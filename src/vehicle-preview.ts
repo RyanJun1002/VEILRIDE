@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { createCar, type WorldMapId } from './renderer';
 import type { CarCustomization } from './cars';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
 const MAP_STYLE: Record<WorldMapId, { platform: number; hemi: number; ground: number; key: number; rim: number }> = {
   mountain: { platform: 0xb7bdb9, hemi: 0xcfe4d8, ground: 0x35443b, key: 0xffdfb5, rim: 0x9bd9bc },
@@ -19,11 +20,11 @@ export class VehiclePreviewRenderer {
     opacity: 0.1,
     depthWrite: false,
   });
-  private readonly hemi = new THREE.HemisphereLight(0xcfe4d8, 0x35443b, 2.9);
-  private readonly key = new THREE.DirectionalLight(0xffdfb5, 6.2);
-  private readonly fill = new THREE.DirectionalLight(0xffffff, 3.05);
-  private readonly rim = new THREE.DirectionalLight(0x9bd9bc, 3.8);
-  private readonly ambient = new THREE.AmbientLight(0xffffff, 1.15);
+  private readonly hemi = new THREE.HemisphereLight(0xd9e7e8, 0x404842, 1.7);
+  private readonly key = new THREE.DirectionalLight(0xffecda, 3.2);
+  private readonly fill = new THREE.DirectionalLight(0xdce9ff, 1.3);
+  private readonly rim = new THREE.DirectionalLight(0xcce5da, 1.8);
+  private readonly ambient = new THREE.AmbientLight(0xffffff, .3);
   private vehicle: THREE.Group | null = null;
   private active = true;
   private lastFrame = 0;
@@ -42,16 +43,23 @@ export class VehiclePreviewRenderer {
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, this.lowPower ? 1.25 : 1.75));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.29;
+    this.renderer.toneMappingExposure = 1;
+    const environment = new RoomEnvironment();
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    this.scene.environment = pmrem.fromScene(environment, .06).texture;
+    environment.dispose();
+    pmrem.dispose();
     this.renderer.shadowMap.enabled = !this.lowPower;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    this.camera.position.set(7.2, 3.8, 8.8);
+    this.camera.position.set(6.6, 3.15, -8.7);
     this.camera.lookAt(0, 1.05, 0);
     this.scene.add(this.pivot, this.hemi, this.key, this.fill, this.rim, this.ambient);
     this.key.position.set(-5, 8, 4);
     this.key.castShadow = !this.lowPower;
     this.key.shadow.mapSize.set(1024, 1024);
+    this.key.shadow.normalBias = .02;
+    this.key.shadow.radius = 3;
     this.fill.position.set(4.5, 5.5, 8.5);
     this.rim.position.set(6, 4, -5);
 
@@ -86,7 +94,7 @@ export class VehiclePreviewRenderer {
     vehicle.scale.setScalar(scale);
     const fittedBox = new THREE.Box3().setFromObject(vehicle);
     const center = fittedBox.getCenter(new THREE.Vector3());
-    vehicle.position.set(-center.x, -fittedBox.min.y + 0.055, -center.z);
+    vehicle.position.set(-center.x, -fittedBox.min.y + 0.013, -center.z);
     const centeredBox = new THREE.Box3().setFromObject(vehicle);
     const centeredVehicle = centeredBox.getCenter(new THREE.Vector3());
     this.camera.lookAt(0, centeredVehicle.y, 0);
@@ -98,7 +106,7 @@ export class VehiclePreviewRenderer {
     this.vehicle = vehicle;
     this.pivot.clear();
     this.pivot.add(vehicle);
-    this.pivot.rotation.y = -0.62;
+    this.pivot.rotation.y = .2;
     this.canvas.classList.remove('is-changing');
     void this.canvas.offsetWidth;
     this.canvas.classList.add('is-changing');
@@ -125,7 +133,7 @@ export class VehiclePreviewRenderer {
     const dt = Math.min((time - this.lastTime) / 1000, 0.05);
     this.lastTime = time;
     this.lastFrame = time;
-    if (!this.reducedMotion) this.pivot.rotation.y += dt * 0.22;
+    if (!this.reducedMotion) this.pivot.rotation.y += dt * 0.12;
     this.renderer.render(this.scene, this.camera);
   };
 
